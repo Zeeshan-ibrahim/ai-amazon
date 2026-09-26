@@ -1,7 +1,7 @@
 # Quick On Amazon
 
 Amazon arbitrage trading dashboard — a Next.js frontend and an Express API.
-
+<!-- here -->
 ```
 .
 ├── backend/    Express 5 + Node (ESM) + PostgreSQL.
