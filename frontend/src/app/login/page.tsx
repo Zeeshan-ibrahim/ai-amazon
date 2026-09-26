@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { AuthLayout } from '@/components/auth/AuthLayout';
 import { Button } from '@/components/ui/Button';
 import { Input, PasswordInput } from '@/components/ui/Input';
-import { api } from '@/lib/api';
+import { api, userMessage } from '@/lib/api';
 import { homeFor } from '@/lib/auth';
 
 export default function LoginPage() {
@@ -24,7 +24,7 @@ export default function LoginPage() {
       const { user } = await api.login({ email, password });
       router.push(homeFor(user.role));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to sign in.');
+      setError(userMessage(err, 'Unable to sign in.'));
     } finally {
       setLoading(false);
     }

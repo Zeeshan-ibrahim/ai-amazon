@@ -6,7 +6,7 @@ import { PlanCard } from '@/components/plans/PlanCard';
 import { Card, SectionTitle } from '@/components/ui/Card';
 import { EmptyState, ErrorState, LoadingBlock } from '@/components/ui/States';
 import { useApi } from '@/hooks/useApi';
-import { api } from '@/lib/api';
+import { api, userMessage } from '@/lib/api';
 import { formatCurrency } from '@/lib/format';
 import type { PlansPayload } from '@/lib/types';
 
@@ -31,7 +31,7 @@ export default function PlansPage() {
       await refetch();
     } catch (err) {
       setActionError(
-        err instanceof Error ? err.message : 'Unable to activate this contract.'
+        userMessage(err, 'Unable to activate this contract.')
       );
     } finally {
       setActivatingId(null);

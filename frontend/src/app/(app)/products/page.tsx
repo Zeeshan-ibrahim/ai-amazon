@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/Button';
 import { SegmentedControl, Tabs } from '@/components/ui/Tabs';
 import { EmptyState, ErrorState, LoadingBlock } from '@/components/ui/States';
 import { useApi } from '@/hooks/useApi';
-import { api } from '@/lib/api';
+import { api, userMessage } from '@/lib/api';
 import type { ProductState, ProductTab, ProductsPayload } from '@/lib/types';
 
 const fetchProducts = () => api.products() as Promise<ProductsPayload>;
@@ -61,7 +61,7 @@ export default function ProductsPage() {
       await refetch();
     } catch (err) {
       setActionError(
-        err instanceof Error ? err.message : 'Unable to complete this purchase.'
+        userMessage(err, 'Unable to complete this purchase.')
       );
     } finally {
       setPurchasingId(null);

@@ -2,7 +2,8 @@
  * Demo (in-memory) data source.
  *
  * Everything the API serves that has not moved to Postgres yet. Users,
- * balances, products, orders and transactions already live in Postgres. Each export below will
+ * balances, products, orders, transactions and deposit wallets already live in
+ * Postgres. Each export below will
  * become a table as its rules are defined, so keep the shapes stable — the
  * frontend types mirror them 1:1.
  */
@@ -145,34 +146,4 @@ export const languages = [
   { code: 'ar', label: 'العربية' },
   { code: 'de', label: 'Deutsch' },
   { code: 'fr', label: 'Français' },
-];
-
-export const depositAssets = [
-  {
-    id: 'usdt-trc20',
-    symbol: 'USDT',
-    network: 'TRC20',
-    networkLabel: 'Network: TRON (TRC20)',
-    address: '0x7E0d4e9d377D428a4C6438dbA8a3636088c279c6',
-    confirmations: '1 Network Block',
-    minAmount: 10,
-  },
-  {
-    id: 'usdt-erc20',
-    symbol: 'USDT',
-    network: 'ERC20',
-    networkLabel: 'Network: ETHEREUM (ERC20)',
-    address: '0x9Fb2c41Ad7Aa1Cc0Ee8B5d2F4a1937Ef55De9021',
-    confirmations: '12 Network Blocks',
-    minAmount: 10,
-  },
-  {
-    id: 'btc',
-    symbol: 'Bitcoin',
-    network: 'BTC',
-    networkLabel: 'Network: BITCOIN',
-    address: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq',
-    confirmations: '2 Network Blocks',
-    minAmount: 10,
-  },
 ];

@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from 'react';
 import { AdminButton, AdminInput, AdminSelect, Notice, PicturesNeeded } from '@/components/admin/ui';
 import { Modal } from '@/components/ui/Modal';
-import { api } from '@/lib/api';
+import { api, userMessage } from '@/lib/api';
 import type { Member, Role } from '@/lib/types';
 
 const EMPTY = {
@@ -50,7 +50,7 @@ export function AddMemberModal({
       setForm(EMPTY);
       onCreated(member);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not create the member.');
+      setError(userMessage(err, 'Could not create the member.'));
     } finally {
       setSaving(false);
     }

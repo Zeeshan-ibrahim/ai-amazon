@@ -1,10 +1,11 @@
 'use client';
 
 import { useCallback, useState, type FormEvent } from 'react';
+import { ReceiptViewer } from '@/components/admin/financials/ReceiptViewer';
 import { AdminButton, AdminCard, AdminInput, Notice, PicturesNeeded } from '@/components/admin/ui';
 import { EmptyState, ErrorState, LoadingBlock } from '@/components/ui/States';
 import { useApi } from '@/hooks/useApi';
-import { api } from '@/lib/api';
+import { api, userMessage } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { formatCurrency, formatDateTime, formatSignedCurrency } from '@/lib/format';
 import type { LedgerEntry, Member } from '@/lib/types';
@@ -32,7 +33,7 @@ export function LedgerTab({
 
   const entries = data ?? [];
   const approvedDeposits = entries
-    .filter((e) => e.type === 'deposit' && e.status === 'APPROVED')
+    .filter((e) => e.type === 'deposit' && e.status === 'COMPLETED')
     .reduce((sum, e) => sum + e.amount, 0);
   const pending = entries.filter((e) => e.status === 'PENDING').length;
 
@@ -111,7 +112,7 @@ function AdjustBalanceForm({ memberId, onDone }: { memberId: string; onDone: () 
       setResult({ tone: 'success', text: `${direction === 'credit' ? 'Credited' : 'Debited'} ${formatCurrency(Number(amount))}.` });
       await onDone();
     } catch (err) {
-      setResult({ tone: 'error', text: err instanceof Error ? err.message : 'Could not adjust the balance.' });
+      setResult({ tone: 'error', text: userMessage(err, 'Could not adjust the balance.') });
     } finally {
       setSaving(false);
     }
@@ -169,6 +170,7 @@ function AdjustBalanceForm({ memberId, onDone }: { memberId: string; onDone: () 
 
 function EntryRow({ entry, onReviewed }: { entry: LedgerEntry; onReviewed: () => Promise<void> }) {
   const [busy, setBusy] = useState<'approve' | 'reject' | null>(null);
+  const [viewing, setViewing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const reviewable = entry.status === 'PENDING' && entry.type !== 'adjustment';
 
@@ -179,12 +181,12 @@ function EntryRow({ entry, onReviewed }: { entry: LedgerEntry; onReviewed: () =>
       await api.admin.reviewTransaction(entry.id, decision);
       await onReviewed();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not update this transaction.');
+      setError(userMessage(err, 'Could not update this transaction.'));
       setBusy(null);
     }
   };
 
-  const meta = [entry.asset, entry.address, entry.receiptName && `Receipt: ${entry.receiptName}`, entry.note && `Note: ${entry.note}`]
+  const meta = [[entry.coin, entry.network].filter(Boolean).join(' '), entry.address, entry.note && `Note: ${entry.note}`]
     .filter(Boolean)
     .join(' · ');
 
@@ -196,7 +198,17 @@ function EntryRow({ entry, onReviewed }: { entry: LedgerEntry; onReviewed: () =>
         </p>
         <p className="mt-0.5 text-[12px] text-subtle">{formatDateTime(entry.createdAt)}</p>
         {meta && <p className="mt-1 break-all text-[12px] text-muted">{meta}</p>}
+        {entry.hasReceipt && (
+          <button
+            type="button"
+            onClick={() => setViewing(true)}
+            className="mt-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-ink underline underline-offset-4"
+          >
+            View screenshot
+          </button>
+        )}
         {error && <p className="mt-2 text-[12px] font-medium text-dangerSoft">{error}</p>}
+        {viewing && <ReceiptViewer entry={entry} onClose={() => setViewing(false)} />}
       </div>
 
       <div className="flex shrink-0 items-center gap-4">
@@ -231,7 +243,7 @@ function StatusPill({ status }: { status: string }) {
     <span
       className={cn(
         'mt-1 inline-block text-[10px] font-extrabold uppercase tracking-[0.14em]',
-        status === 'APPROVED' && 'text-money',
+        status === 'COMPLETED' && 'text-money',
         status === 'REJECTED' && 'text-dangerSoft',
         status === 'PENDING' && 'text-[#b08a2e]'
       )}

@@ -111,6 +111,24 @@ if (productCount[0].n === 0) {
   console.log(`created ${catalog.length} catalog products`);
 }
 
+/* ------------------------------------------------------------- wallets */
+
+// Placeholder addresses — replace from the admin Wallets section before real use.
+const wallets = [
+  ['USDT', 'ERC20', '0x7E0d4e9d377D428a4C6438dbA8a3636088c279c6'],
+  ['USDT', 'ERC20', '0x9Fb2c41Ad7Aa1Cc0Ee8B5d2F4a1937Ef55De9021'],
+  ['USDT', 'TRC20', 'TXq4mW9vRb7kLp2cDs8nGh3jYf6aZu1eQw'],
+  ['BTC', 'BITCOIN', 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq'],
+];
+
+const { rows: walletCount } = await query('SELECT count(*)::int AS n FROM wallets');
+if (walletCount[0].n === 0) {
+  for (const [coin, network, address] of wallets) {
+    await query('INSERT INTO wallets (coin, network, address) VALUES ($1, $2, $3)', [coin, network, address]);
+  }
+  console.log(`created ${wallets.length} deposit wallets`);
+}
+
 /* -------------------------------------------------- ledger + orders */
 
 const admin = await findByEmail('admin@demo.test');
@@ -121,8 +139,9 @@ async function seedLedger(email, entries) {
   if (rows.length) return;
   for (const [type, amount, status] of entries) {
     await query(
-      `INSERT INTO transactions (user_id, type, direction, amount, status, asset, reviewed_by, reviewed_at)
-       VALUES ($1, $2, $3, $4, $5, 'USDT TRC20', $6, $7)`,
+      `INSERT INTO transactions
+         (user_id, type, direction, amount, status, coin, network, reviewed_by, reviewed_at)
+       VALUES ($1, $2, $3, $4, $5, 'USDT', 'TRC20', $6, $7)`,
       [user.id, type, type === 'deposit' ? 'credit' : 'debit', amount, status,
         status === 'pending' ? null : admin.id, status === 'pending' ? null : new Date()]
     );

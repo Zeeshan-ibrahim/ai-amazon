@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { userMessage } from '@/lib/api';
 import type { Paged } from '@/lib/types';
 
 /**
@@ -29,7 +30,7 @@ export function usePagedList<T>(fetchPage: (offset: number) => Promise<Paged<T>>
         setTotal(page.total);
       } catch (err) {
         if (current !== generation.current) return;
-        setError(err instanceof Error ? err.message : 'Unable to reach the server.');
+        setError(userMessage(err, "We couldn't load this right now."));
       } finally {
         if (current === generation.current) {
           setLoading(false);
@@ -54,5 +55,11 @@ export function usePagedList<T>(fetchPage: (offset: number) => Promise<Paged<T>>
     loadMore: () => load(items.length),
     reload: () => load(0),
     setItems,
+    /** Drop items locally (e.g. once reviewed) and keep `total` in step. */
+    remove: (predicate: (item: T) => boolean) => {
+      const removed = items.filter(predicate).length;
+      setItems((prev) => prev.filter((item) => !predicate(item)));
+      setTotal((t) => Math.max(0, t - removed));
+    },
   };
 }

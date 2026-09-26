@@ -7,7 +7,7 @@ import { BoxIcon, CheckIcon, LayersIcon } from '@/components/ui/Icons';
 import { EmptyState, ErrorState, Skeleton } from '@/components/ui/States';
 import { useDebounced } from '@/hooks/useDebounced';
 import { usePagedList } from '@/hooks/usePagedList';
-import { api } from '@/lib/api';
+import { api, userMessage } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { formatCurrency, formatNumber } from '@/lib/format';
 import type { CatalogProduct, Member } from '@/lib/types';
@@ -52,7 +52,7 @@ export function OrdersTab({ member, onGoToLedger }: { member: Member; onGoToLedg
         items.map((item) => (item.id === product.id ? { ...item, assigned: true } : item))
       );
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not assign this contract.');
+      setError(userMessage(err, 'Could not assign this contract.'));
     } finally {
       setAssigningId(null);
     }

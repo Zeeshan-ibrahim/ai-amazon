@@ -127,21 +127,19 @@ export type Transaction = {
   id: string;
   title: string;
   createdAt: string;
-  status: string;
+  status: 'PENDING' | 'COMPLETED' | 'REJECTED';
   amount: number;
   direction: 'credit' | 'debit';
 };
 
 export type Language = { code: string; label: string };
 
-export type DepositAsset = {
+/** A company wallet traders pay into. */
+export type Wallet = {
   id: string;
-  symbol: string;
+  coin: string;
   network: string;
-  networkLabel: string;
   address: string;
-  confirmations: string;
-  minAmount: number;
 };
 
 /* --------------------------------------------------------------- admin */
@@ -180,11 +178,19 @@ export type CatalogProduct = {
 
 export type LedgerEntry = Transaction & {
   type: 'deposit' | 'withdrawal' | 'adjustment';
-  asset: string | null;
+  coin: string | null;
+  network: string | null;
+  /** Deposit: company wallet paid into. Withdrawal: member's destination. */
   address: string | null;
   receiptName: string | null;
+  hasReceipt: boolean;
   note: string | null;
   reviewedAt: string | null;
+};
+
+/** A deposit/withdrawal in the admin Financials queue. */
+export type FinancialRequest = LedgerEntry & {
+  member: { id: string; displayName: string; email: string };
 };
 
 export type AuditEntry = {

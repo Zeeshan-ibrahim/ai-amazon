@@ -14,7 +14,17 @@ import {
   listTransactions,
   toTransaction,
 } from '../models/transactions.js';
+import multer from 'multer';
+import { UUID_PATTERN } from '../models/users.js';
+import { findActiveWallet, listActiveWallets } from '../models/wallets.js';
+import { discardReceipt, MAX_RECEIPT_BYTES, receiptUpload, saveReceipt, UploadError } from '../uploads.js';
 import { fail, ok } from './respond.js';
+
+const MIN_DEPOSIT = 10;
+
+// The withdraw form only takes USDT on TRON today.
+const WITHDRAWAL_COIN = 'USDT';
+const WITHDRAWAL_NETWORK = 'TRC20';
 
 const router = Router();
 
@@ -124,27 +134,63 @@ router.get('/transactions', async (req, res) => {
   ok(res, (await listTransactions(req.user.id, limit)).map(toTransaction));
 });
 
-router.get('/deposit-assets', (req, res) => ok(res, db.depositAssets));
+/** Company wallets a trader can pay into (Deposit Center step 2). */
+router.get('/wallets', async (req, res) => ok(res, await listActiveWallets()));
 
-/** Records a pending deposit. The balance moves only when an admin approves it. */
-router.post('/deposits', async (req, res) => {
-  const { amount, assetId, receiptName } = req.body ?? {};
-  const asset = db.depositAssets.find((a) => a.id === (assetId ?? 'usdt-trc20'));
-  if (!asset) return fail(res, 400, 'Unsupported deposit asset.');
+/** Runs the multer parser and turns its errors into 400s. */
+const parseReceipt = (req, res, next) =>
+  receiptUpload(req, res, (err) => {
+    if (!err) return next();
+    if (err instanceof multer.MulterError) {
+      return fail(
+        res,
+        400,
+        err.code === 'LIMIT_FILE_SIZE'
+          ? `Receipt must be ${MAX_RECEIPT_BYTES / 1024 / 1024}MB or smaller.`
+          : 'Upload a single receipt image.'
+      );
+    }
+    next(err);
+  });
 
+/**
+ * Multipart: `amount`, `walletId`, `receipt` (JPG/PNG/WEBP, max 5MB).
+ * Records a pending deposit; the balance moves only when an admin approves it.
+ */
+router.post('/deposits', parseReceipt, async (req, res) => {
+  const { amount, walletId } = req.body ?? {};
   const value = Math.round(Number(amount) * 100) / 100;
-  if (!(value >= asset.minAmount)) {
-    return fail(res, 400, `Minimum deposit amount is $${asset.minAmount}.`);
+  if (!(value >= MIN_DEPOSIT)) return fail(res, 400, `Minimum deposit amount is $${MIN_DEPOSIT}.`);
+
+  const wallet = UUID_PATTERN.test(String(walletId)) ? await findActiveWallet(walletId) : null;
+  if (!wallet) return fail(res, 400, 'Choose one of the listed payment wallets.');
+  if (!req.file) return fail(res, 400, 'Upload a screenshot of your payment receipt.');
+
+  let stored;
+  try {
+    stored = await saveReceipt(req.file.buffer);
+  } catch (err) {
+    if (err instanceof UploadError) return fail(res, 400, err.message);
+    throw err;
   }
 
-  const tx = await createRequest({
-    userId: req.user.id,
-    type: 'deposit',
-    amount: value,
-    asset: `${asset.symbol} ${asset.network}`,
-    receiptName: receiptName ? String(receiptName).slice(0, 255) : null,
-  });
-  ok(res, toTransaction(tx), 201);
+  try {
+    const tx = await createRequest({
+      userId: req.user.id,
+      type: 'deposit',
+      amount: value,
+      coin: wallet.coin,
+      network: wallet.network,
+      address: wallet.address,
+      walletId: wallet.id,
+      receiptName: req.file.originalname.slice(0, 255),
+      receiptPath: stored,
+    });
+    ok(res, { ...toTransaction(tx), coin: tx.coin, network: tx.network }, 201);
+  } catch (err) {
+    await discardReceipt(stored);
+    throw err;
+  }
 });
 
 /**
@@ -167,6 +213,8 @@ router.post('/withdrawals', async (req, res) => {
     userId: req.user.id,
     type: 'withdrawal',
     amount: value,
+    coin: WITHDRAWAL_COIN,
+    network: WITHDRAWAL_NETWORK,
     address: String(address).trim().slice(0, 255),
   });
   ok(res, toTransaction(tx), 201);

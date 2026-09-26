@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { api } from '@/lib/api';
+import { api, userMessage } from '@/lib/api';
 import { formatCurrency } from '@/lib/format';
 
 export function WithdrawModal({
@@ -35,7 +35,7 @@ export function WithdrawModal({
       onSuccess?.();
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Withdrawal request failed.');
+      setError(userMessage(err, 'Withdrawal request failed.'));
     } finally {
       setSubmitting(false);
     }

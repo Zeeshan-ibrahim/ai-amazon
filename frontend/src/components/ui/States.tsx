@@ -49,7 +49,7 @@ export function ErrorState({
     <div className="rounded-card border border-dangerSoft/25 bg-dangerSoft/5 px-5 py-6 text-center">
       <p className="text-sm font-medium text-dangerSoft">{message}</p>
       <p className="mt-1 text-[13px] text-muted">
-        Make sure the API server is running on port 4000.
+        If the problem continues, please check back in a few minutes.
       </p>
       {onRetry && (
         <button

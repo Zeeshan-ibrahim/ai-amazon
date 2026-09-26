@@ -5,7 +5,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
 import { Card, Eyebrow } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
-import { api } from '@/lib/api';
+import { api, userMessage } from '@/lib/api';
 import type { User } from '@/lib/types';
 
 export function ProfileForm({
@@ -41,7 +41,7 @@ export function ProfileForm({
     } catch (error) {
       setStatus('error');
       setMessage(
-        error instanceof Error ? error.message : 'Could not save your changes.'
+        userMessage(error, 'Could not save your changes.')
       );
     }
   };

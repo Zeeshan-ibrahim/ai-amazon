@@ -1,5 +1,6 @@
 import { pool, withTransaction } from '../db/pool.js';
 import { AUDIT, recordAudit } from './audit.js';
+import { displayNameOf } from './users.js';
 
 export class LedgerError extends Error {
   constructor(status, message) {
@@ -8,18 +9,23 @@ export class LedgerError extends Error {
   }
 }
 
+const via = (row) => (row.coin ? ` (${[row.coin, row.network].filter(Boolean).join(' ')})` : '');
+
 function titleFor(row) {
-  if (row.type === 'deposit') return `Deposit request (${row.asset ?? 'crypto'})`;
-  if (row.type === 'withdrawal') return 'Withdrawal request';
+  if (row.type === 'deposit') return `Deposit request${via(row)}`;
+  if (row.type === 'withdrawal') return `Withdrawal request${via(row)}`;
   return row.direction === 'credit' ? 'Balance credit' : 'Balance debit';
 }
+
+/** What both apps display. An approved request reads as completed. */
+const STATUS_LABELS = { pending: 'PENDING', approved: 'COMPLETED', rejected: 'REJECTED' };
 
 /** The trader's view — matches `Transaction` in frontend/src/lib/types.ts. */
 export const toTransaction = (row) => ({
   id: row.id,
   title: titleFor(row),
   createdAt: row.created_at,
-  status: row.status.toUpperCase(),
+  status: STATUS_LABELS[row.status],
   amount: row.amount,
   direction: row.direction,
 });
@@ -28,12 +34,56 @@ export const toTransaction = (row) => ({
 export const toLedgerEntry = (row) => ({
   ...toTransaction(row),
   type: row.type,
-  asset: row.asset,
+  coin: row.coin,
+  network: row.network,
   address: row.address,
   receiptName: row.receipt_name,
+  hasReceipt: row.receipt_path !== null,
   note: row.note,
   reviewedAt: row.reviewed_at,
 });
+
+export async function findTransaction(id) {
+  const { rows } = await pool.query('SELECT * FROM transactions WHERE id = $1', [id]);
+  return rows[0] ?? null;
+}
+
+/**
+ * The Financials queue across all members. `scope: 'active'` is pending
+ * requests; `'history'` is everything already approved or rejected.
+ * Also returns how many of each type are pending, for the tab badges.
+ */
+export async function listRequests({ type, scope, limit, offset }) {
+  const status = scope === 'active' ? "t.status = 'pending'" : "t.status <> 'pending'";
+  const order = scope === 'active' ? 't.created_at DESC' : 't.reviewed_at DESC NULLS LAST, t.created_at DESC';
+  const [{ rows }, { rows: countRows }, { rows: pendingRows }] = await Promise.all([
+    pool.query(
+      `SELECT t.*, u.first_name, u.last_name, u.username, u.email
+         FROM transactions t JOIN users u ON u.id = t.user_id
+        WHERE t.type = $1 AND ${status}
+        ORDER BY ${order}
+        LIMIT $2 OFFSET $3`,
+      [type, limit, offset]
+    ),
+    pool.query(`SELECT count(*)::int AS total FROM transactions t WHERE t.type = $1 AND ${status}`, [type]),
+    pool.query(
+      `SELECT type, count(*)::int AS n FROM transactions
+        WHERE status = 'pending' AND type IN ('deposit', 'withdrawal') GROUP BY type`
+    ),
+  ]);
+
+  const pending = { deposit: 0, withdrawal: 0 };
+  for (const r of pendingRows) pending[r.type] = r.n;
+
+  return {
+    total: countRows[0].total,
+    pending,
+    items: rows.map((row) => ({
+      ...toLedgerEntry(row),
+      member: { id: row.user_id, displayName: displayNameOf(row), email: row.email },
+    })),
+  };
+}
 
 export async function listTransactions(userId, limit = 0) {
   const { rows } = await pool.query(
@@ -57,13 +107,25 @@ export async function hasApprovedDeposit(userId, db = pool) {
 }
 
 /** A trader's deposit or withdrawal request. Does not move the balance. */
-export function createRequest({ userId, type, amount, asset, address, receiptName }) {
+export function createRequest({
+  userId,
+  type,
+  amount,
+  coin,
+  network,
+  address,
+  walletId = null,
+  receiptName = null,
+  receiptPath = null,
+}) {
   return withTransaction(async (db) => {
     const { rows } = await db.query(
-      `INSERT INTO transactions (user_id, type, direction, amount, asset, address, receipt_name)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `INSERT INTO transactions
+         (user_id, type, direction, amount, coin, network, address, wallet_id, receipt_name, receipt_path)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
        RETURNING *`,
-      [userId, type, type === 'deposit' ? 'credit' : 'debit', amount, asset, address, receiptName]
+      [userId, type, type === 'deposit' ? 'credit' : 'debit', amount, coin, network, address,
+        walletId, receiptName, receiptPath]
     );
     await recordAudit(db, {
       actorId: userId,

@@ -82,6 +82,17 @@ row in the same database transaction.
 | POST | `/admin/transactions/:id/approve` | Pending deposit → credits balance; pending withdrawal → debits it (`409` if short) |
 | POST | `/admin/transactions/:id/reject` | `note?`. No balance change |
 
+### Financials
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| GET | `/admin/transactions` | All members. `?type=deposit\|withdrawal&scope=active\|history&limit=&offset=` → `{ total, pending: { deposit, withdrawal }, items: FinancialRequest[] }`. Active = pending; history = completed or rejected |
+| GET | `/admin/transactions/:id/receipt` | The uploaded receipt image, inline (`nosniff`, `default-src 'none'`) |
+
+`FinancialRequest` = `LedgerEntry` + `member: { id, displayName, email }`.
+`LedgerEntry` carries `coin`, `network`, `address` (deposit: the company
+wallet paid into; withdrawal: the member's destination) and `hasReceipt`.
+
 ### Orders
 
 | Method | Path | Notes |
@@ -130,12 +141,13 @@ Balances below come from the signed-in user's row.
 | Method | Path | Notes |
 | --- | --- | --- |
 | GET | `/transactions` | The trader's own ledger. Optional `?limit=5`. `status` is `PENDING`, `APPROVED` or `REJECTED` |
-| GET | `/deposit-assets` | Supported crypto assets and custody addresses |
-| POST | `/deposits` | `amount` (≥ asset minimum), `assetId`, `receiptName?` → `201` pending |
-| POST | `/withdrawals` | `amount`, `address` → `201` pending. `400` above the balance or the member's withdrawal limit |
+| GET | `/wallets` | Active company wallets: `{ id, coin, network, address }[]` |
+| POST | `/deposits` | **multipart/form-data**: `amount` (min 10), `walletId`, `receipt` (JPG/PNG/WEBP, max 5MB, checked by file signature) → `201` pending |
+| POST | `/withdrawals` | `amount`, `address` → `201` pending (recorded as USDT TRC20). `400` above the balance or the member's withdrawal limit |
 
-Neither moves the balance; an admin approves or rejects it. The withdrawal
-PIN isn't verified yet.
+Neither moves the balance; an admin approves or rejects it. `status` reads
+`PENDING`, then `COMPLETED` (approved) or `REJECTED`. The withdrawal PIN isn't
+verified yet.
 
 ## Misc
 

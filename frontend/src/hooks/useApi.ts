@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { userMessage } from '@/lib/api';
 
 type State<T> = {
   data: T | null;
@@ -29,10 +30,7 @@ export function useApi<T>(fetcher: () => Promise<T>) {
       setState({
         data: null,
         loading: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : 'Unable to reach the server.',
+        error: userMessage(error, "We couldn't load this right now."),
       });
     }
   }, [fetcher]);

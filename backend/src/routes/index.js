@@ -22,7 +22,7 @@ router.use('/auth', auth);
 router.use(requireAuth);
 router.use(account);
 router.use('/admin', requireRole(ROLES.ADMIN), admin, (req, res) =>
-  fail(res, 404, 'Route not found.')
+  fail(res, 404, "We couldn't find what you were looking for.")
 );
 router.use(requireRole(ROLES.USER), user);
 

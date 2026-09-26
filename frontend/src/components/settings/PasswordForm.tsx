@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Card, Eyebrow } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Tabs } from '@/components/ui/Tabs';
-import { api } from '@/lib/api';
+import { api, userMessage } from '@/lib/api';
 
 const EMPTY = { currentPassword: '', newPassword: '', confirmPassword: '' };
 
@@ -37,7 +37,7 @@ export function PasswordForm() {
     } catch (error) {
       setStatus('error');
       setMessage(
-        error instanceof Error ? error.message : 'Could not update credentials.'
+        userMessage(error, 'Could not update credentials.')
       );
     }
   };

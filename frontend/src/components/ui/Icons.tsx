@@ -279,3 +279,28 @@ export const LayersIcon = (p: IconProps) => (
     <path d="m3 12 9 4.5 9-4.5M3 16.5 12 21l9-4.5" />
   </svg>
 );
+
+export const ClockIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <circle cx="12" cy="12" r="8.5" />
+    <path d="M12 7.5V12l3 2" />
+  </svg>
+);
+
+export const ArrowDownLeftIcon = (p: IconProps) => (
+  <svg {...base(p)} strokeWidth={1.8}>
+    <path d="M17 7 7 17M15.5 17H7V8.5" />
+  </svg>
+);
+
+export const ArrowRightIcon = (p: IconProps) => (
+  <svg {...base(p)} strokeWidth={2}>
+    <path d="M5 12h14M13 6l6 6-6 6" />
+  </svg>
+);
+
+export const ArrowLeftIcon = (p: IconProps) => (
+  <svg {...base(p)} strokeWidth={2}>
+    <path d="M19 12H5M11 6l-6 6 6 6" />
+  </svg>
+);

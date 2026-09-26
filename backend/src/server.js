@@ -20,7 +20,7 @@ app.get('/health', (req, res) => res.json({ status: 'ok' }));
 app.use('/api', routes);
 
 app.use((req, res) =>
-  res.status(404).json({ success: false, message: 'Route not found.' })
+  res.status(404).json({ success: false, message: "We couldn't find what you were looking for." })
 );
 
 app.use((err, req, res, next) => {

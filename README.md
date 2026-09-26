@@ -38,7 +38,8 @@ Then open http://localhost:3000 and sign in.
 | `locked@demo.test` | `password123` | `user` | `/dashboard` — deposit still pending, so orders are hidden |
 | `admin@demo.test` | `password123` | `admin` | `/admin` |
 
-`npm run db:seed` also adds two more members and a 30-product catalog.
+`npm run db:seed` also adds two more members, a 30-product catalog and four
+placeholder deposit wallets.
 
 Create a real admin with
 `npm run db:create-admin -- --email you@example.com --password '...' --username admin`.
@@ -53,7 +54,8 @@ NEXT_PUBLIC_API_URL=http://localhost:4000/api
 ```
 
 `backend/.env` — see `backend/.env.example`: `DATABASE_URL`, `JWT_SECRET`,
-`CLIENT_ORIGIN` (the frontend origin allowed to send the session cookie).
+`CLIENT_ORIGIN` (the frontend origin allowed to send the session cookie),
+`UPLOAD_DIR` (receipt screenshots; defaults to `backend/uploads`).
 
 ## Screens
 
@@ -67,6 +69,7 @@ NEXT_PUBLIC_API_URL=http://localhost:4000/api
 | `/settings` | Profile, credentials, language, recent ledger actions |
 | `/admin/members` | Member list, search, add member |
 | `/admin/members/:id` | Particulars, ledger (approve deposits, adjust balance), orders (assign contracts), audits |
+| `/admin/financials` | Deposit and withdrawal requests from all members — approve, reject, view receipt |
 | `/admin/*` | Other admin sections — placeholders |
 
 ## Roles

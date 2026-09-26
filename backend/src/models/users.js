@@ -18,11 +18,12 @@ export const normalizeEmail = (email) => String(email ?? '').trim().toLowerCase(
  * The only shape a user row ever leaves the API in. Hashes never go out, and
  * the field names match `frontend/src/lib/types.ts` → `User`.
  */
+/** "First Last", else the username, else the email's local part. */
+export const displayNameOf = ({ first_name, last_name, username, email }) =>
+  `${first_name} ${last_name}`.trim() || username || email.split('@')[0];
+
 export function toPublicUser(row) {
-  const displayName =
-    `${row.first_name} ${row.last_name}`.trim() ||
-    row.username ||
-    row.email.split('@')[0];
+  const displayName = displayNameOf(row);
 
   return {
     id: row.id,

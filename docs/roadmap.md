@@ -32,9 +32,11 @@ role-gated frontend apps. Still open:
 
 ## 3. Admin panel
 
-Built: **Members** (list, add, particulars, ledger, orders, audits). Still
+Built: **Members** (list, add, particulars, ledger, orders, audits) and
+**Financials** (deposit/withdrawal review queue with receipts). Still
 placeholders: analytics, products (catalog CRUD), plans, plan requests,
-financials, banners, wallets, my account.
+banners, wallets (the `wallets` table exists and is seeded; there's no admin
+screen to manage it yet), my account.
 
 Built without reference screenshots — search the frontend for
 `PicturesNeeded` to find them: the member **Ledger** and **Audits** tabs and
@@ -47,10 +49,11 @@ which moves the balance. Still to build:
 
 - Settlement: what purchasing and selling an order do to the balance, and how
   an order reaches `completed`. Today purchase only moves it to the Sell tab.
-- A cross-member review queue (the Financials section).
+- Receipts are stored on local disk (`UPLOAD_DIR`). Move to object storage
+  before running more than one API instance.
+- Withdrawals are always recorded as USDT TRC20 — the withdraw modal has no
+  coin/network picker yet.
 
-- Receipt upload: the deposit modal collects the file but only sends its name.
-  Needs multipart handling and object storage.
 - Contract yield accrual on a schedule.
 
 ## 5. Smaller gaps

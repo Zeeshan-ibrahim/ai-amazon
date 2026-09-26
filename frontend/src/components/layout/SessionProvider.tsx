@@ -11,7 +11,7 @@ import {
 } from 'react';
 import { useRouter } from 'next/navigation';
 import { ErrorState } from '@/components/ui/States';
-import { api, ApiError } from '@/lib/api';
+import { api, ApiError, userMessage } from '@/lib/api';
 import { homeFor } from '@/lib/auth';
 import type { Role, User } from '@/lib/types';
 
@@ -57,9 +57,9 @@ export function SessionProvider({
       setUser(await api.me());
     } catch (err) {
       setUser(null);
-      // 401/403 mean "no usable session"; anything else is the API being unreachable.
+      // 401/403 mean "no usable session"; anything else is shown with a retry.
       if (!(err instanceof ApiError && (err.status === 401 || err.status === 403))) {
-        setError(err instanceof Error ? err.message : 'Unable to reach the server.');
+        setError(userMessage(err, "We couldn't load your account."));
       }
     } finally {
       setLoading(false);

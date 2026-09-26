@@ -2,9 +2,9 @@
  * Admin panel API. Mounted at `/api/admin` behind `requireRole('admin')`,
  * so every handler here can assume an admin session.
  *
- * Built: members (list, create, particulars, ledger, orders, audits).
- * Still to come: analytics, products, plans, plan requests, financials,
- * banners, wallets.
+ * Built: members (list, create, particulars, ledger, orders, audits) and
+ * financials (the deposit/withdrawal review queue).
+ * Still to come: analytics, products, plans, plan requests, banners, wallets.
  */
 import { Router } from 'express';
 import { withTransaction } from '../db/pool.js';
@@ -14,11 +14,14 @@ import { assignOrder } from '../models/orders.js';
 import { listCatalog } from '../models/products.js';
 import {
   adjustBalance,
+  findTransaction,
   LedgerError,
+  listRequests,
   listTransactions,
   reviewTransaction,
   toLedgerEntry,
 } from '../models/transactions.js';
+import { receiptFile } from '../uploads.js';
 import {
   createUser,
   EMAIL_PATTERN,
@@ -208,6 +211,41 @@ const review = (approve) => async (req, res) => {
 
 router.post('/transactions/:transactionId/approve', review(true));
 router.post('/transactions/:transactionId/reject', review(false));
+
+/* ---------------------------------------------------------- financials */
+
+/** `?type=deposit|withdrawal&scope=active|history&limit=&offset=` */
+router.get('/transactions', async (req, res) => {
+  const { type = 'deposit', scope = 'active' } = req.query;
+  if (type !== 'deposit' && type !== 'withdrawal') return fail(res, 400, 'Unknown type.');
+  if (scope !== 'active' && scope !== 'history') return fail(res, 400, 'Unknown scope.');
+  ok(res, await listRequests({ type, scope, ...page(req.query, 20) }));
+});
+
+/** The uploaded receipt image, served inline to admins only. */
+router.get('/transactions/:transactionId/receipt', async (req, res) => {
+  const tx = UUID_PATTERN.test(req.params.transactionId)
+    ? await findTransaction(req.params.transactionId)
+    : null;
+  if (!tx?.receipt_path) return fail(res, 404, 'Receipt not found.');
+
+  const { filePath, mime } = receiptFile(tx.receipt_path);
+  res.sendFile(
+    filePath,
+    {
+      headers: {
+        'Content-Type': mime,
+        'Content-Disposition': 'inline',
+        'Cache-Control': 'private, max-age=300',
+        'X-Content-Type-Options': 'nosniff',
+        'Content-Security-Policy': "default-src 'none'",
+        // The admin app runs on another origin and embeds this with <img>.
+        'Cross-Origin-Resource-Policy': 'same-site',
+      },
+    },
+    (err) => err && !res.headersSent && fail(res, 404, 'Receipt not found.')
+  );
+});
 
 /* -------------------------------------------------------------- orders */
 

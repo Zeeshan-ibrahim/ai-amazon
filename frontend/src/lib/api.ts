@@ -1,11 +1,14 @@
 import type {
   AuditEntry,
   CatalogProduct,
+  FinancialRequest,
   LedgerEntry,
   Member,
   MemberInput,
   Paged,
+  Transaction,
   User,
+  Wallet,
 } from './types';
 
 /** `{ a: 1, b: undefined }` → `?a=1` */
@@ -35,6 +38,27 @@ export class ApiError extends Error {
 
 type RequestOptions = Omit<RequestInit, 'body'> & { body?: unknown };
 
+const GENERIC_ERROR = 'Something went wrong. Please try again.';
+const OFFLINE_ERROR = "We couldn't connect. Check your internet connection and try again.";
+const SERVER_ERROR = 'Something went wrong on our side. Please try again in a moment.';
+
+/**
+ * The text to show a person for a caught error. Only the API's own 4xx
+ * messages are written for users; network failures, server errors and bugs
+ * in our code get friendly copy instead, and the real error is logged for
+ * developers.
+ */
+export function userMessage(error: unknown, fallback = GENERIC_ERROR): string {
+  if (error instanceof ApiError) {
+    if (error.status === 0) return OFFLINE_ERROR;
+    if (error.status < 500) return error.message;
+    console.error(error);
+    return SERVER_ERROR;
+  }
+  console.error(error);
+  return fallback;
+}
+
 /**
  * Thin fetch wrapper. Unwraps the `{ success, data }` envelope the API uses
  * and throws `ApiError` on any non-2xx response.
@@ -43,16 +67,22 @@ export async function request<T>(
   path: string,
   { body, headers, ...init }: RequestOptions = {}
 ): Promise<T> {
-  const response = await fetch(`${BASE_URL}${path}`, {
-    ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      ...headers,
-    },
-    body: body === undefined ? undefined : JSON.stringify(body),
-    cache: 'no-store',
-    credentials: 'include',
-  });
+  // FormData sets its own multipart Content-Type (with the boundary).
+  const isForm = body instanceof FormData;
+  let response: Response;
+  try {
+    response = await fetch(`${BASE_URL}${path}`, {
+      ...init,
+      headers: isForm ? headers : { 'Content-Type': 'application/json', ...headers },
+      body: body === undefined ? undefined : isForm ? body : JSON.stringify(body),
+      cache: 'no-store',
+      credentials: 'include',
+    });
+  } catch (cause) {
+    // fetch only rejects when the request never got a response (offline, DNS, CORS).
+    console.error(cause);
+    throw new ApiError(OFFLINE_ERROR, 0);
+  }
 
   const json = await response.json().catch(() => null);
 
@@ -68,7 +98,7 @@ export async function request<T>(
 
   if (!response.ok || json?.success === false) {
     throw new ApiError(
-      json?.message ?? 'Something went wrong. Please try again.',
+      json?.message ?? GENERIC_ERROR,
       response.status,
       json?.data
     );
@@ -107,9 +137,10 @@ export const api = {
 
   transactions: (limit?: number) =>
     request(`/transactions${limit ? `?limit=${limit}` : ''}`),
-  depositAssets: () => request('/deposit-assets'),
-  createDeposit: (body: Record<string, unknown>) =>
-    request('/deposits', { method: 'POST', body }),
+  wallets: () => request<Wallet[]>('/wallets'),
+  /** Multipart: `amount`, `walletId`, `receipt` (image file). */
+  createDeposit: (form: FormData) =>
+    request<Transaction>('/deposits', { method: 'POST', body: form }),
   createWithdrawal: (body: Record<string, unknown>) =>
     request('/withdrawals', { method: 'POST', body }),
 
@@ -150,5 +181,16 @@ export const api = {
       }),
 
     audits: (id: string) => request<AuditEntry[]>(`/admin/members/${id}/audits`),
+
+    requests: (params: {
+      type: 'deposit' | 'withdrawal';
+      scope: 'active' | 'history';
+      offset?: number;
+    }) =>
+      request<Paged<FinancialRequest> & { pending: Record<'deposit' | 'withdrawal', number> }>(
+        `/admin/transactions${qs(params)}`
+      ),
+    /** Direct image URL — the session cookie authorizes it. */
+    receiptUrl: (transactionId: string) => `${BASE_URL}/admin/transactions/${transactionId}/receipt`,
   },
 };

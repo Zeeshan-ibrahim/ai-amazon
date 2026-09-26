@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from 'react';
 import { useSession } from '@/components/layout/SessionProvider';
 import { AdminButton, AdminCard, AdminInput, AdminSelect, Notice } from '@/components/admin/ui';
-import { api } from '@/lib/api';
+import { api, userMessage } from '@/lib/api';
 import type { Member, Role } from '@/lib/types';
 
 const FIELD_LABELS: Record<string, string> = {
@@ -64,7 +64,7 @@ export function ParticularsTab({
           : { tone: 'info', text: 'Nothing changed.' }
       );
     } catch (err) {
-      setResult({ tone: 'error', text: err instanceof Error ? err.message : 'Could not save.' });
+      setResult({ tone: 'error', text: userMessage(err, 'Could not save.') });
     } finally {
       setSaving(false);
     }

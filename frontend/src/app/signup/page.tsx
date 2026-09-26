@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { AuthLayout } from '@/components/auth/AuthLayout';
 import { Button } from '@/components/ui/Button';
 import { Input, PasswordInput } from '@/components/ui/Input';
-import { api } from '@/lib/api';
+import { api, userMessage } from '@/lib/api';
 import { homeFor } from '@/lib/auth';
 
 export default function SignupPage() {
@@ -30,7 +30,7 @@ export default function SignupPage() {
       const { user } = await api.signup(form);
       router.push(homeFor(user.role));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to create account.');
+      setError(userMessage(err, 'Unable to create account.'));
     } finally {
       setLoading(false);
     }
