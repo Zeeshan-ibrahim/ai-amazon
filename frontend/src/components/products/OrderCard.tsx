@@ -9,27 +9,38 @@ import type { Product } from '@/lib/types';
 
 type Row = { label: string; value: string; tone?: string; emphasis?: boolean };
 
+/**
+ * The active order in the Purchase or Sell queue. `mode` picks the action;
+ * the funding rows only matter before purchase.
+ */
 export function OrderCard({
   product,
   balance,
   position,
   total,
-  onPurchase,
-  purchasing,
+  mode = 'purchase',
+  onAction,
+  busy,
 }: {
   product: Product;
   balance: number;
   position: number;
   total: number;
-  onPurchase: () => void;
-  purchasing?: boolean;
+  mode?: 'purchase' | 'sell';
+  onAction: () => void;
+  busy?: boolean;
 }) {
-  const missing = Math.max(0, +(product.amount - balance).toFixed(2));
+  const selling = mode === 'sell';
+  const missing = selling ? 0 : Math.max(0, +(product.amount - balance).toFixed(2));
 
   const rows: Row[] = [
     { label: 'Product amount', value: formatCurrency(product.amount), emphasis: true },
-    { label: 'Current balance', value: formatCurrency(balance) },
-    { label: 'Required balance', value: formatCurrency(product.amount) },
+    ...(selling
+      ? []
+      : [
+          { label: 'Current balance', value: formatCurrency(balance) },
+          { label: 'Required balance', value: formatCurrency(product.amount) },
+        ]),
     ...(missing > 0
       ? [
           {
@@ -55,7 +66,7 @@ export function OrderCard({
     <article className="overflow-hidden rounded-card border border-line bg-white shadow-card">
       <header className="flex items-center justify-between gap-3 border-b border-line px-5 py-3.5">
         <p className="text-[10px] font-medium uppercase tracking-[0.13em] text-subtle">
-          Active order queue
+          {selling ? 'Sell queue' : 'Active order queue'}
         </p>
         <p className="text-[10px] font-medium uppercase tracking-[0.13em] text-brand-600">
           Active task {position} of {total}
@@ -80,7 +91,7 @@ export function OrderCard({
 
       <div className="px-5 pb-5 sm:px-6 sm:pb-6">
         <p className="text-[10px] font-medium uppercase tracking-[0.13em] text-brand-600">
-          Available order
+          {selling ? 'Ready to sell' : 'Available order'}
         </p>
         <h3 className="mt-2.5 text-xl font-medium leading-snug tracking-tight text-ink sm:text-[22px]">
           {product.name}
@@ -119,10 +130,10 @@ export function OrderCard({
           size="lg"
           fullWidth
           className="mt-2"
-          onClick={onPurchase}
-          loading={purchasing}
+          onClick={onAction}
+          loading={busy}
         >
-          Purchase now
+          {selling ? 'Sell now' : 'Purchase now'}
         </Button>
       </div>
     </article>

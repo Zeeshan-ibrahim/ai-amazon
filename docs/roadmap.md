@@ -45,10 +45,12 @@ the **Add member** modal.
 ## 4. Balance movement
 
 Deposits and withdrawals are approved per member in the admin Ledger tab,
-which moves the balance. Still to build:
+which moves the balance. Purchasing an order debits its price and selling it
+credits price + profit. Still to build:
 
-- Settlement: what purchasing and selling an order do to the balance, and how
-  an order reaches `completed`. Today purchase only moves it to the Sell tab.
+- Orders purchased before migration 005 have no purchase debit, so selling
+  them credits the full return. Harmless with demo data; backfill or void
+  them before real balances exist.
 - Receipts are stored on local disk (`UPLOAD_DIR`). Move to object storage
   before running more than one API instance.
 - Withdrawals are always recorded as USDT TRC20 — the withdraw modal has no

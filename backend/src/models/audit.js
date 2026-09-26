@@ -8,6 +8,8 @@ export const AUDIT = Object.freeze({
   MEMBER_CREATED: 'member.created',
   MEMBER_UPDATED: 'member.updated',
   ORDER_ASSIGNED: 'order.assigned',
+  ORDER_PURCHASED: 'order.purchased',
+  ORDER_SOLD: 'order.sold',
   BALANCE_ADJUSTED: 'balance.adjusted',
   DEPOSIT_REQUESTED: 'deposit.requested',
   WITHDRAWAL_REQUESTED: 'withdrawal.requested',

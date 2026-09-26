@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState } from 'react';
 import { BalanceSummary } from '@/components/products/BalanceSummary';
+import { CompletedOrders } from '@/components/products/CompletedOrders';
 import {
   InsufficientBanner,
   InsufficientPanel,
@@ -14,7 +15,7 @@ import { Button } from '@/components/ui/Button';
 import { SegmentedControl, Tabs } from '@/components/ui/Tabs';
 import { EmptyState, ErrorState, LoadingBlock } from '@/components/ui/States';
 import { useApi } from '@/hooks/useApi';
-import { api, userMessage } from '@/lib/api';
+import { api, ApiError, userMessage } from '@/lib/api';
 import type { ProductState, ProductTab, ProductsPayload } from '@/lib/types';
 
 const fetchProducts = () => api.products() as Promise<ProductsPayload>;
@@ -24,6 +25,21 @@ const STATE_FILTERS: { id: ProductState; label: string }[] = [
   { id: 'assigned', label: 'Assigned' },
 ];
 
+const EMPTY_COPY: Record<ProductTab, { title: string; hint: string }> = {
+  purchase: {
+    title: 'No orders in this queue right now.',
+    hint: 'New liquidation lots are assigned throughout the day.',
+  },
+  sell: {
+    title: 'Nothing to sell right now.',
+    hint: 'Orders you purchase appear here, ready to sell.',
+  },
+  completed: {
+    title: 'No completed orders yet.',
+    hint: 'Orders you sell are listed here.',
+  },
+};
+
 export default function ProductsPage() {
   const fetcher = useCallback(fetchProducts, []);
   const { data, loading, error, refetch } = useApi<ProductsPayload>(fetcher);
@@ -31,7 +47,7 @@ export default function ProductsPage() {
   const [tab, setTab] = useState<ProductTab>('purchase');
   const [stateFilter, setStateFilter] = useState<ProductState>('assigned');
   const [depositOpen, setDepositOpen] = useState(false);
-  const [purchasingId, setPurchasingId] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const visible = useMemo(() => {
@@ -49,23 +65,37 @@ export default function ProductsPage() {
 
   const { availableBalance, completed, notice } = data.meta;
   const active = visible[0] ?? null;
-  const missing = active
-    ? Math.max(0, +(active.amount - availableBalance).toFixed(2))
-    : 0;
+  // Funding only matters before purchase; sold-side orders are already paid for.
+  const missing =
+    active && tab === 'purchase'
+      ? Math.max(0, +(active.amount - availableBalance).toFixed(2))
+      : 0;
 
-  const purchase = async (id: string) => {
+  const runAction = async (id: string) => {
+    const selling = tab === 'sell';
     setActionError(null);
-    setPurchasingId(id);
+    setBusyId(id);
     try {
-      await api.purchaseProduct(id);
+      await (selling ? api.sellProduct(id) : api.purchaseProduct(id));
       await refetch();
     } catch (err) {
+      // 409 means the order already moved on (another tab, a double click):
+      // reload so the queue matches the server instead of showing a stale card.
+      if (err instanceof ApiError && err.status === 409) await refetch();
       setActionError(
-        userMessage(err, 'Unable to complete this purchase.')
+        userMessage(
+          err,
+          selling ? 'Unable to sell this order.' : 'Unable to complete this purchase.'
+        )
       );
     } finally {
-      setPurchasingId(null);
+      setBusyId(null);
     }
+  };
+
+  const changeTab = (id: ProductTab) => {
+    setActionError(null);
+    setTab(id);
   };
 
   return (
@@ -88,14 +118,18 @@ export default function ProductsPage() {
         <Tabs
           className="flex-1"
           active={tab}
-          onChange={(id) => setTab(id as ProductTab)}
+          onChange={(id) => changeTab(id as ProductTab)}
           items={[
             {
               id: 'purchase',
               label: 'Purchase Products',
               badge: data.counts.purchase ? `${data.counts.purchase} new` : undefined,
             },
-            { id: 'sell', label: 'Sell Products' },
+            {
+              id: 'sell',
+              label: 'Sell Products',
+              badge: data.counts.sell ? `${data.counts.sell} ready` : undefined,
+            },
             { id: 'completed', label: 'Completed Orders' },
           ]}
         />
@@ -129,10 +163,9 @@ export default function ProductsPage() {
           <Button onClick={() => setDepositOpen(true)}>Deposit funds</Button>
         </div>
       ) : !active ? (
-        <EmptyState
-          title="No orders in this queue right now."
-          hint="New liquidation lots are assigned throughout the day."
-        />
+        <EmptyState {...EMPTY_COPY[tab]} />
+      ) : tab === 'completed' ? (
+        <CompletedOrders items={visible} />
       ) : (
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:items-start">
           {/* Mobile: warning banner first, then the card */}
@@ -152,23 +185,26 @@ export default function ProductsPage() {
             balance={availableBalance}
             position={1}
             total={visible.length}
-            onPurchase={() => purchase(active.id)}
-            purchasing={purchasingId === active.id}
+            mode={tab === 'sell' ? 'sell' : 'purchase'}
+            onAction={() => runAction(active.id)}
+            busy={busyId === active.id}
           />
 
-          <aside className="hidden space-y-4 lg:block">
-            <OrderMetrics
-              required={active.amount}
-              current={availableBalance}
-              missing={missing}
-            />
-            {missing > 0 && (
-              <InsufficientPanel
+          {tab === 'purchase' && (
+            <aside className="hidden space-y-4 lg:block">
+              <OrderMetrics
+                required={active.amount}
+                current={availableBalance}
                 missing={missing}
-                onDeposit={() => setDepositOpen(true)}
               />
-            )}
-          </aside>
+              {missing > 0 && (
+                <InsufficientPanel
+                  missing={missing}
+                  onDeposit={() => setDepositOpen(true)}
+                />
+              )}
+            </aside>
+          )}
         </div>
       )}
 

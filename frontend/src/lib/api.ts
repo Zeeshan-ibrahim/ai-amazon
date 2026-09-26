@@ -130,6 +130,8 @@ export const api = {
   products: () => request('/products'),
   purchaseProduct: (id: string) =>
     request(`/products/${id}/purchase`, { method: 'POST' }),
+  sellProduct: (id: string) =>
+    request(`/products/${id}/sell`, { method: 'POST' }),
 
   plans: () => request('/plans'),
   activatePlan: (id: string) =>

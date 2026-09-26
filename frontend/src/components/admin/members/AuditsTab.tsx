@@ -13,6 +13,8 @@ const ACTION_LABELS: Record<string, string> = {
   'member.created': 'Account created',
   'member.updated': 'Particulars updated',
   'order.assigned': 'Contract assigned',
+  'order.purchased': 'Order purchased',
+  'order.sold': 'Order sold',
   'balance.adjusted': 'Balance adjusted',
   'deposit.requested': 'Deposit requested',
   'withdrawal.requested': 'Withdrawal requested',
@@ -43,6 +45,10 @@ function describe({ action, details: d }: AuditEntry): string | null {
       return `${show(d.email)} as ${show(d.role)}`;
     case 'order.assigned':
       return `Price ${money(d.price)}`;
+    case 'order.purchased':
+      return `Debited ${money(d.amount)} · new balance ${money(d.balance)}`;
+    case 'order.sold':
+      return `Credited ${money(d.amount)} · new balance ${money(d.balance)}`;
     case 'balance.adjusted':
       return [`${show(d.direction)} ${money(d.amount)}`, `new balance ${money(d.balance)}`, d.note && `“${d.note}”`]
         .filter(Boolean)

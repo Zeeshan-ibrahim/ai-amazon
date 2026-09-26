@@ -14,6 +14,8 @@ const TYPE_LABELS: Record<LedgerEntry['type'], string> = {
   deposit: 'Deposit',
   withdrawal: 'Withdrawal',
   adjustment: 'Adjustment',
+  order_purchase: 'Order purchase',
+  order_sale: 'Order sale',
 };
 
 export function LedgerTab({
@@ -186,7 +188,13 @@ function EntryRow({ entry, onReviewed }: { entry: LedgerEntry; onReviewed: () =>
     }
   };
 
-  const meta = [[entry.coin, entry.network].filter(Boolean).join(' '), entry.address, entry.note && `Note: ${entry.note}`]
+  const isOrder = entry.type === 'order_purchase' || entry.type === 'order_sale';
+  const meta = [
+    isOrder && entry.title,
+    [entry.coin, entry.network].filter(Boolean).join(' '),
+    entry.address,
+    entry.note && `Note: ${entry.note}`,
+  ]
     .filter(Boolean)
     .join(' · ');
 

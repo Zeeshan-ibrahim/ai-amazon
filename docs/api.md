@@ -107,8 +107,10 @@ wallet paid into; withdrawal: the member's destination) and `hasReceipt`.
   then. Admin balance adjustments don't count as deposits.
 - Deposits and withdrawals are requests. Only admin approval moves the balance.
 - `withdrawalLimit` is the maximum per withdrawal request; `0` means no limit.
-- Purchasing an order moves it to the Sell tab. It doesn't move the balance
-  yet; settlement rules are still to be defined.
+- Purchasing an order debits its price and moves it to the Sell tab.
+  Selling credits price + profit (`totalReturn`) and moves it to Completed.
+  Each is recorded as an approved `order_purchase` / `order_sale` ledger row
+  linked by `order_id`, committed together with the status change.
 - An order copies the product's price and profit % at assignment time.
 
 ## Trader endpoints (`role = user`)
@@ -128,6 +130,7 @@ Balances below come from the signed-in user's row.
 | --- | --- | --- |
 | GET | `/products` | The trader's orders. Optional `?tab=purchase\|sell\|completed` and `?state=assigned\|completed`. Returns `{ meta, items, counts }`; empty with `meta.depositRequired` until a deposit is approved |
 | POST | `/products/:id/purchase` | `402` when the balance is short, with `data: { required, current, missing }` |
+| POST | `/products/:id/sell` | Purchased → completed, credits `totalReturn`. `409` if not yet purchased or already sold |
 
 ### Plans
 

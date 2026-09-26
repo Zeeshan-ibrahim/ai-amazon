@@ -11,9 +11,13 @@ export class LedgerError extends Error {
 
 const via = (row) => (row.coin ? ` (${[row.coin, row.network].filter(Boolean).join(' ')})` : '');
 
+const product = (row) => (row.product_title ? `: ${row.product_title}` : '');
+
 function titleFor(row) {
   if (row.type === 'deposit') return `Deposit request${via(row)}`;
   if (row.type === 'withdrawal') return `Withdrawal request${via(row)}`;
+  if (row.type === 'order_purchase') return `Order purchase${product(row)}`;
+  if (row.type === 'order_sale') return `Order sale${product(row)}`;
   return row.direction === 'credit' ? 'Balance credit' : 'Balance debit';
 }
 
@@ -87,8 +91,12 @@ export async function listRequests({ type, scope, limit, offset }) {
 
 export async function listTransactions(userId, limit = 0) {
   const { rows } = await pool.query(
-    `SELECT * FROM transactions WHERE user_id = $1
-      ORDER BY created_at DESC ${limit ? 'LIMIT $2' : ''}`,
+    `SELECT t.*, p.title AS product_title
+       FROM transactions t
+       LEFT JOIN orders o ON o.id = t.order_id
+       LEFT JOIN products p ON p.id = o.product_id
+      WHERE t.user_id = $1
+      ORDER BY t.created_at DESC ${limit ? 'LIMIT $2' : ''}`,
     limit ? [userId, limit] : [userId]
   );
   return rows;
@@ -147,6 +155,23 @@ async function applyToBalance(db, userId, direction, amount) {
   );
   if (!rows[0]) throw new LedgerError(409, 'Insufficient balance for this debit.');
   return rows[0].balance;
+}
+
+/**
+ * Moves the balance for an order purchase (debit) or sale (credit) and
+ * records it as an approved ledger row. Run inside the order's transaction.
+ * Throws `LedgerError` (409) when a debit would overdraw the balance.
+ */
+export async function recordSettlement(db, { userId, orderId, type, amount }) {
+  const direction = type === 'order_sale' ? 'credit' : 'debit';
+  const balance = await applyToBalance(db, userId, direction, amount);
+  const { rows } = await db.query(
+    `INSERT INTO transactions (user_id, order_id, type, direction, amount, status, reviewed_at)
+     VALUES ($1, $2, $3, $4, $5, 'approved', now())
+     RETURNING *`,
+    [userId, orderId, type, direction, amount]
+  );
+  return { transaction: rows[0], balance };
 }
 
 /** Approve or reject a pending deposit/withdrawal. Approval moves the balance. */

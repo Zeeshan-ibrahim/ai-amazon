@@ -7,15 +7,16 @@
  */
 import { Router } from 'express';
 import * as db from '../data/demo.js';
-import { listOrdersForUser, markPurchased, toTraderOrder } from '../models/orders.js';
+import { listOrdersForUser, purchaseOrder, sellOrder, toTraderOrder } from '../models/orders.js';
 import {
   createRequest,
   hasApprovedDeposit,
+  LedgerError,
   listTransactions,
   toTransaction,
 } from '../models/transactions.js';
 import multer from 'multer';
-import { UUID_PATTERN } from '../models/users.js';
+import { findById, UUID_PATTERN } from '../models/users.js';
 import { findActiveWallet, listActiveWallets } from '../models/wallets.js';
 import { discardReceipt, MAX_RECEIPT_BYTES, receiptUpload, saveReceipt, UploadError } from '../uploads.js';
 import { fail, ok } from './respond.js';
@@ -81,19 +82,38 @@ router.post('/products/:id/purchase', async (req, res) => {
   if (!order) return fail(res, 404, 'Order not found.');
   if (order.status !== 'assigned') return fail(res, 409, 'This order has already been purchased.');
 
-  const balance = req.user.balance;
-  if (balance < order.price) {
-    return fail(res, 402, 'Insufficient balance to complete this order.', {
+  const insufficient = (current) =>
+    fail(res, 402, 'Insufficient balance to complete this order.', {
       required: order.price,
-      current: balance,
-      missing: +(order.price - balance).toFixed(2),
+      current,
+      missing: +(order.price - current).toFixed(2),
     });
-  }
+  if (req.user.balance < order.price) return insufficient(req.user.balance);
 
-  // Settlement rules (balance movement on purchase/sell) aren't defined yet,
-  // so purchasing only moves the order to the Sell tab.
-  const updated = await markPurchased(order.id, req.user.id);
+  let updated;
+  try {
+    updated = await purchaseOrder(order.id, req.user.id);
+  } catch (err) {
+    // The balance changed between the check above and the debit.
+    if (err instanceof LedgerError) return insufficient((await findById(req.user.id)).balance);
+    throw err;
+  }
   if (!updated) return fail(res, 409, 'This order has already been purchased.');
+  ok(res, toTraderOrder({ ...order, ...updated }));
+});
+
+/** Sells a purchased order: credits price + profit and moves it to Completed. */
+router.post('/products/:id/sell', async (req, res) => {
+  const unlocked = await hasApprovedDeposit(req.user.id);
+  const order = unlocked
+    ? (await listOrdersForUser(req.user.id)).find((o) => o.id === req.params.id)
+    : null;
+  if (!order) return fail(res, 404, 'Order not found.');
+  if (order.status === 'assigned') return fail(res, 409, 'Purchase this order before selling it.');
+  if (order.status === 'completed') return fail(res, 409, 'This order has already been sold.');
+
+  const updated = await sellOrder(order.id, req.user.id);
+  if (!updated) return fail(res, 409, 'This order has already been sold.');
   ok(res, toTraderOrder({ ...order, ...updated }));
 });
 

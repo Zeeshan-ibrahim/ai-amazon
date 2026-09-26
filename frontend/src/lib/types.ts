@@ -177,7 +177,7 @@ export type CatalogProduct = {
 };
 
 export type LedgerEntry = Transaction & {
-  type: 'deposit' | 'withdrawal' | 'adjustment';
+  type: 'deposit' | 'withdrawal' | 'adjustment' | 'order_purchase' | 'order_sale';
   coin: string | null;
   network: string | null;
   /** Deposit: company wallet paid into. Withdrawal: member's destination. */
