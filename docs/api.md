@@ -77,7 +77,7 @@ row in the same database transaction.
 
 | Method | Path | Notes |
 | --- | --- | --- |
-| GET | `/admin/members/:id/transactions` | `LedgerEntry[]` (a `Transaction` plus `type`, `asset`, `address`, `receiptName`, `note`, `reviewedAt`) |
+| GET | `/admin/members/:id/transactions` | `LedgerEntry[]` (a `Transaction` plus `receiptName`, `hasReceipt`, `note`) |
 | POST | `/admin/members/:id/adjustments` | `direction` (`credit`/`debit`), `amount`, `note?`. Applied immediately; `409` if a debit exceeds the balance |
 | POST | `/admin/transactions/:id/approve` | Pending deposit → credits balance; pending withdrawal → debits it (`409` if short) |
 | POST | `/admin/transactions/:id/reject` | `note?`. No balance change |
@@ -143,14 +143,14 @@ Balances below come from the signed-in user's row.
 
 | Method | Path | Notes |
 | --- | --- | --- |
-| GET | `/transactions` | The trader's own ledger. Optional `?limit=5`. `status` is `PENDING`, `APPROVED` or `REJECTED` |
+| GET | `/transactions` | The trader's own ledger, newest first. Optional `?limit=5` and `?type=deposit\|withdrawal\|adjustment\|order_purchase\|order_sale` (`400` otherwise). Each row carries `type`, `coin`, `network`, `address`, `reviewedAt` |
+| GET | `/faq` | `{ id, question, answer }[]` for Help & Platform FAQ |
 | GET | `/wallets` | Active company wallets: `{ id, coin, network, address }[]` |
 | POST | `/deposits` | **multipart/form-data**: `amount` (min 10), `walletId`, `receipt` (JPG/PNG/WEBP, max 5MB, checked by file signature) → `201` pending |
-| POST | `/withdrawals` | `amount`, `address` → `201` pending (recorded as USDT TRC20). `400` above the balance or the member's withdrawal limit |
+| POST | `/withdrawals` | `amount`, `address`, `pin` → `201` pending (recorded as USDT TRC20). `400` without a PIN set, with a wrong PIN, above the balance or above the member's withdrawal limit |
 
 Neither moves the balance; an admin approves or rejects it. `status` reads
-`PENDING`, then `COMPLETED` (approved) or `REJECTED`. The withdrawal PIN isn't
-verified yet.
+`PENDING`, then `COMPLETED` (approved) or `REJECTED`.
 
 ## Misc
 

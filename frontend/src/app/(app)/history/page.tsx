@@ -9,7 +9,7 @@ import { useApi } from '@/hooks/useApi';
 import { api } from '@/lib/api';
 import type { Transaction } from '@/lib/types';
 
-const fetchTransactions = () => api.transactions() as Promise<Transaction[]>;
+const fetchTransactions = () => api.transactions();
 
 const FILTERS = [
   { id: 'all', label: 'All' },

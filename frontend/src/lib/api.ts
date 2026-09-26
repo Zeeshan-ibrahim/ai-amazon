@@ -1,12 +1,14 @@
 import type {
   AuditEntry,
   CatalogProduct,
+  FaqItem,
   FinancialRequest,
   LedgerEntry,
   Member,
   MemberInput,
   Paged,
   Transaction,
+  TransactionType,
   User,
   Wallet,
 } from './types';
@@ -137,8 +139,9 @@ export const api = {
   activatePlan: (id: string) =>
     request(`/plans/${id}/activate`, { method: 'POST' }),
 
-  transactions: (limit?: number) =>
-    request(`/transactions${limit ? `?limit=${limit}` : ''}`),
+  transactions: (params: { limit?: number; type?: TransactionType } = {}) =>
+    request<Transaction[]>(`/transactions${qs(params)}`),
+  faq: () => request<FaqItem[]>('/faq'),
   wallets: () => request<Wallet[]>('/wallets'),
   /** Multipart: `amount`, `walletId`, `receipt` (image file). */
   createDeposit: (form: FormData) =>

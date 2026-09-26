@@ -147,3 +147,49 @@ export const languages = [
   { code: 'de', label: 'Deutsch' },
   { code: 'fr', label: 'Français' },
 ];
+
+/** Help & Platform FAQ, in display order. Answers describe the rules the API enforces. */
+export const faq = [
+  {
+    id: 'unlock',
+    question: 'Why can’t I see any orders yet?',
+    answer:
+      'Orders assigned to you stay hidden until your first deposit is approved. Open Deposit, pay into one of the listed company wallets and upload the receipt — once an admin approves it, your queue unlocks.',
+  },
+  {
+    id: 'deposit-time',
+    question: 'How long does a deposit take?',
+    answer:
+      'Deposits stay Pending until an admin checks your receipt. Your balance moves only when the deposit is approved. You can follow every request under Deposit Records.',
+  },
+  {
+    id: 'purchase-sell',
+    question: 'How do purchasing and selling work?',
+    answer:
+      'Purchasing an order deducts its price from your balance and moves it to Sell Products. Selling it pays back the price plus the order’s profit percentage and moves it to Completed Orders.',
+  },
+  {
+    id: 'insufficient',
+    question: 'What if my balance is too low for an order?',
+    answer:
+      'The order card shows exactly how much is missing. Make a deposit for at least that amount; once it is approved you can purchase the order.',
+  },
+  {
+    id: 'withdraw',
+    question: 'How do I withdraw?',
+    answer:
+      'Open Withdraw, enter the amount and your USDT (TRC20) address, and confirm with your withdrawal PIN. The request is reviewed by an admin, and the balance is deducted when it is approved. Your account may have a maximum amount per withdrawal.',
+  },
+  {
+    id: 'pin',
+    question: 'What is the withdrawal PIN?',
+    answer:
+      'A second 4–6 digit password that protects withdrawals. Set it under Manage Settings → Withdrawal PIN; the first time, your login password authorizes it.',
+  },
+  {
+    id: 'rejected',
+    question: 'My request was rejected. What now?',
+    answer:
+      'A rejected deposit or withdrawal never moves your balance. Check the details under Deposit or Withdrawal Records and submit a new request, or contact support.',
+  },
+];

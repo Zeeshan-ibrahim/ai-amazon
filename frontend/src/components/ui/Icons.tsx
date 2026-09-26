@@ -304,3 +304,16 @@ export const ArrowLeftIcon = (p: IconProps) => (
     <path d="M19 12H5M11 6l-6 6 6 6" />
   </svg>
 );
+
+export const ChevronRightIcon = (p: IconProps) => (
+  <svg {...base(p)} strokeWidth={2}>
+    <path d="m9 5 7 7-7 7" />
+  </svg>
+);
+
+export const HelpIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.3-2.4 3.8M12 17h.01" />
+  </svg>
+);

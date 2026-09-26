@@ -16,7 +16,7 @@ import {
   toTransaction,
 } from '../models/transactions.js';
 import multer from 'multer';
-import { findById, UUID_PATTERN } from '../models/users.js';
+import { findById, UUID_PATTERN, verifySecret } from '../models/users.js';
 import { findActiveWallet, listActiveWallets } from '../models/wallets.js';
 import { discardReceipt, MAX_RECEIPT_BYTES, receiptUpload, saveReceipt, UploadError } from '../uploads.js';
 import { fail, ok } from './respond.js';
@@ -149,10 +149,19 @@ router.post('/plans/:id/activate', (req, res) => {
 
 /* --------------------------------------------------------------- ledger */
 
+const TRANSACTION_TYPES = ['deposit', 'withdrawal', 'adjustment', 'order_purchase', 'order_sale'];
+
+/** `?type=` narrows to one type (Deposit / Withdrawal Records); `?limit=` caps the count. */
 router.get('/transactions', async (req, res) => {
   const limit = Math.max(Number(req.query.limit) || 0, 0);
-  ok(res, (await listTransactions(req.user.id, limit)).map(toTransaction));
+  const { type } = req.query;
+  if (type !== undefined && !TRANSACTION_TYPES.includes(type)) {
+    return fail(res, 400, 'Unknown transaction type.');
+  }
+  ok(res, (await listTransactions(req.user.id, { limit, type })).map(toTransaction));
 });
+
+router.get('/faq', (req, res) => ok(res, db.faq));
 
 /** Company wallets a trader can pay into (Deposit Center step 2). */
 router.get('/wallets', async (req, res) => ok(res, await listActiveWallets()));
@@ -214,14 +223,22 @@ router.post('/deposits', parseReceipt, async (req, res) => {
 });
 
 /**
- * Records a pending withdrawal. Checked against the balance and the member's
+ * Records a pending withdrawal, authorized by the withdrawal PIN. Checked against the balance and the member's
  * per-withdrawal limit (0 = no limit); the balance moves on admin approval.
  */
 router.post('/withdrawals', async (req, res) => {
-  const { amount, address } = req.body ?? {};
+  const { amount, address, pin } = req.body ?? {};
   const value = Math.round(Number(amount) * 100) / 100;
   if (!(value > 0)) return fail(res, 400, 'Enter a valid withdrawal amount.');
   if (!String(address ?? '').trim()) return fail(res, 400, 'Enter a destination wallet address.');
+
+  const pinHash = req.userRow.withdrawal_pin_hash;
+  if (!pinHash) {
+    return fail(res, 400, 'Set a withdrawal PIN under Settings → Manage Settings before withdrawing.');
+  }
+  if (!pin || !(await verifySecret(String(pin), pinHash))) {
+    return fail(res, 400, 'Withdrawal PIN is incorrect.');
+  }
 
   const limit = req.userRow.withdrawal_limit;
   if (limit > 0 && value > limit) {

@@ -27,24 +27,24 @@ const STATUS_LABELS = { pending: 'PENDING', approved: 'COMPLETED', rejected: 'RE
 /** The trader's view — matches `Transaction` in frontend/src/lib/types.ts. */
 export const toTransaction = (row) => ({
   id: row.id,
+  type: row.type,
   title: titleFor(row),
   createdAt: row.created_at,
   status: STATUS_LABELS[row.status],
   amount: row.amount,
   direction: row.direction,
+  coin: row.coin,
+  network: row.network,
+  address: row.address,
+  reviewedAt: row.reviewed_at,
 });
 
 /** The admin's view: everything, including the internal note. */
 export const toLedgerEntry = (row) => ({
   ...toTransaction(row),
-  type: row.type,
-  coin: row.coin,
-  network: row.network,
-  address: row.address,
   receiptName: row.receipt_name,
   hasReceipt: row.receipt_path !== null,
   note: row.note,
-  reviewedAt: row.reviewed_at,
 });
 
 export async function findTransaction(id) {
@@ -89,15 +89,23 @@ export async function listRequests({ type, scope, limit, offset }) {
   };
 }
 
-export async function listTransactions(userId, limit = 0) {
+/** A member's ledger, newest first. `type` narrows it to one transaction type. */
+export async function listTransactions(userId, { limit = 0, type } = {}) {
+  const params = [userId];
+  const add = (value) => {
+    params.push(value);
+    return `$${params.length}`;
+  };
+  const typeFilter = type ? `AND t.type = ${add(type)}` : '';
+  const limitClause = limit ? `LIMIT ${add(limit)}` : '';
   const { rows } = await pool.query(
     `SELECT t.*, p.title AS product_title
        FROM transactions t
        LEFT JOIN orders o ON o.id = t.order_id
        LEFT JOIN products p ON p.id = o.product_id
-      WHERE t.user_id = $1
-      ORDER BY t.created_at DESC ${limit ? 'LIMIT $2' : ''}`,
-    limit ? [userId, limit] : [userId]
+      WHERE t.user_id = $1 ${typeFilter}
+      ORDER BY t.created_at DESC ${limitClause}`,
+    params
   );
   return rows;
 }

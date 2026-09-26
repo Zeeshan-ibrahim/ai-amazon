@@ -123,14 +123,30 @@ export type PlansPayload = {
   contracts: Contract[];
 };
 
+export type TransactionType =
+  | 'deposit'
+  | 'withdrawal'
+  | 'adjustment'
+  | 'order_purchase'
+  | 'order_sale';
+
 export type Transaction = {
   id: string;
+  type: TransactionType;
   title: string;
   createdAt: string;
   status: 'PENDING' | 'COMPLETED' | 'REJECTED';
   amount: number;
   direction: 'credit' | 'debit';
+  coin: string | null;
+  network: string | null;
+  /** Deposit: company wallet paid into. Withdrawal: member's destination. */
+  address: string | null;
+  /** When an admin approved or rejected it; settlements are stamped on creation. */
+  reviewedAt: string | null;
 };
+
+export type FaqItem = { id: string; question: string; answer: string };
 
 export type Language = { code: string; label: string };
 
@@ -176,16 +192,11 @@ export type CatalogProduct = {
   assigned: boolean;
 };
 
+/** The admin's view of a transaction: adds the receipt and internal note. */
 export type LedgerEntry = Transaction & {
-  type: 'deposit' | 'withdrawal' | 'adjustment' | 'order_purchase' | 'order_sale';
-  coin: string | null;
-  network: string | null;
-  /** Deposit: company wallet paid into. Withdrawal: member's destination. */
-  address: string | null;
   receiptName: string | null;
   hasReceipt: boolean;
   note: string | null;
-  reviewedAt: string | null;
 };
 
 /** A deposit/withdrawal in the admin Financials queue. */

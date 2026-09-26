@@ -1,6 +1,8 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
+import { useSession } from '@/components/layout/SessionProvider';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -23,6 +25,9 @@ export function WithdrawModal({
   const [pin, setPin] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const { user } = useSession();
+  // The API refuses withdrawals until a PIN exists; say so before the form is filled in.
+  const needsPin = user !== null && !user.doubleLedgerPassword;
 
   const submit = async () => {
     setError(null);
@@ -48,12 +53,25 @@ export function WithdrawModal({
       title="Withdraw USD"
       subtitle="Secure network • Admin audited"
       footer={
-        <Button size="lg" fullWidth loading={submitting} onClick={submit}>
+        <Button size="lg" fullWidth loading={submitting} disabled={needsPin} onClick={submit}>
           Submit Withdrawal Request
         </Button>
       }
     >
       <div className="space-y-5">
+        {needsPin && (
+          <p className="rounded-lg bg-gold/15 px-3 py-2.5 text-[13px] text-[#8A6A1F]">
+            Set a withdrawal PIN before withdrawing.{' '}
+            <Link
+              href="/settings/security"
+              onClick={onClose}
+              className="font-medium underline underline-offset-2"
+            >
+              Set it in Manage Settings
+            </Link>
+          </p>
+        )}
+
         <div className="flex items-center justify-between rounded-xl border border-line bg-[#FCFBF7] px-4 py-3.5">
           <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-subtle">
             Available funds
@@ -85,7 +103,7 @@ export function WithdrawModal({
           type="password"
           inputMode="numeric"
           placeholder="••••••"
-          hint="Your second ledger password, set under Settings."
+          hint="Your second ledger password, set under Settings → Manage Settings."
           value={pin}
           onChange={(e) => setPin(e.target.value)}
         />

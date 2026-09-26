@@ -28,7 +28,6 @@ role-gated frontend apps. Still open:
 - Changing the password does not sign out other sessions (would need a
   per-user token version checked in `requireAuth`).
 - No login rate limiting.
-- Withdrawals don't verify the PIN yet.
 
 ## 3. Admin panel
 

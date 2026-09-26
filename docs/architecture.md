@@ -69,7 +69,8 @@ src/
 │       ├── products/
 │       ├── plans/
 │       ├── history/
-│       └── settings/
+│       └── settings/         Account hub ("Mine"): menu → profile/, deposits/,
+│                             withdrawals/, security/, help/
 │   └── admin/
 │       ├── layout.tsx        SessionProvider(role="admin") + AdminShell
 │       └── [section]/        Placeholder per admin nav item until built
