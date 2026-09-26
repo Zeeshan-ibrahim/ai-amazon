@@ -1,25 +1,24 @@
 'use client';
 
-import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useSession } from '@/components/layout/SessionProvider';
+import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { LogoutIcon } from '@/components/ui/Icons';
 import { formatCurrency } from '@/lib/format';
 import type { User } from '@/lib/types';
 
 export function ProfileHeader({ user }: { user: User }) {
-  const router = useRouter();
+  const { logout } = useSession();
 
   return (
     <section className="rounded-card bg-balance-veil p-5 text-white shadow-panel sm:p-6">
       <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-center gap-4">
-          <Image
+          <Avatar
             src={user.avatar}
-            alt=""
-            width={60}
-            height={60}
-            className="h-14 w-14 rounded-full object-cover sm:h-[60px] sm:w-[60px]"
+            name={user.displayName}
+            size={60}
+            className="h-14 w-14 sm:h-[60px] sm:w-[60px]"
           />
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-3">
@@ -27,7 +26,7 @@ export function ProfileHeader({ user }: { user: User }) {
                 {user.firstName} {user.lastName}
               </h1>
               <Badge className="border border-white/15 bg-white/10 text-white">
-                {user.status}
+                {user.status === 'active' ? 'Active trader' : 'Suspended'}
               </Badge>
             </div>
             <p className="mt-0.5 text-[12px] text-white/45">UID: {user.id}</p>
@@ -46,7 +45,7 @@ export function ProfileHeader({ user }: { user: User }) {
 
           <button
             type="button"
-            onClick={() => router.push('/login')}
+            onClick={logout}
             className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-[13px] font-medium text-white transition-colors hover:bg-white/10"
           >
             <LogoutIcon className="h-4 w-4" />

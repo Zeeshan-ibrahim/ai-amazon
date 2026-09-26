@@ -6,69 +6,150 @@ All successful responses are `{ "success": true, "data": ... }`. The tables
 below describe the `data` payload. Errors are
 `{ "success": false, "message": "..." }`.
 
+## Sessions and roles
+
+Login and signup set an httpOnly `session` cookie (a JWT holding only the user
+id, 7-day expiry). Send requests with credentials (`fetch(..., { credentials:
+'include' })`). The user row — including `role` and `status` — is re-read on
+every request, so a role change or suspension applies immediately.
+
+| Section | Who | Otherwise |
+| --- | --- | --- |
+| Auth | anyone | — |
+| Account | any signed-in role | `401` |
+| Admin (`/admin/*`) | `role = admin` | `401` / `403` |
+| Everything else | `role = user` | `401` / `403` |
+
+A suspended account gets `403` everywhere, including login.
+
 ## Auth
 
 | Method | Path | Body | Returns |
 | --- | --- | --- | --- |
-| POST | `/auth/login` | `email`, `password` | `{ token, user }` |
-| POST | `/auth/signup` | `email`, `password`, `firstName?` | `{ token, user }` |
-| POST | `/auth/forgot-password` | `email` | `{ message }` |
+| POST | `/auth/signup` | `email`, `password` (min 8), `firstName?` | `201 { user }`; `409` if the email exists |
+| POST | `/auth/login` | `email`, `password` | `{ user }`; `401` on bad credentials |
+| POST | `/auth/logout` | — | `{ message }`, clears the cookie |
+| POST | `/auth/forgot-password` | `email` | `{ message }` (no email is sent yet) |
 
-Credentials are not verified yet — any non-empty pair succeeds.
+Signup always creates `role = user`; a `role` in the body is ignored. Admins
+are created with `npm run db:create-admin`.
 
-## User
+## Account
 
 | Method | Path | Body | Returns |
 | --- | --- | --- | --- |
 | GET | `/me` | — | `User` |
-| PATCH | `/me` | partial `User` | updated `User` |
-| PUT | `/me/password` | `currentPassword`, `newPassword`, `confirmPassword` | `{ message }` |
+| PATCH | `/me` | any of `firstName`, `lastName`, `username`, `phone`, `email`, `language` | updated `User`; `409` if the username is taken |
+| PUT | `/me/password` | `currentPassword`, `newPassword`, `confirmPassword`, `scope?` | `{ message }` |
 | PUT | `/me/language` | `language` | `{ language }` |
+| GET | `/languages` | — | `Language[]` |
 
-## Dashboard
+`PATCH /me` ignores every other field — `role`, `balance`, `status` and the
+login email cannot be changed by the owner. In `PATCH /me`, `email` is the
+contact email; `loginEmail` on `User` is the sign-in email.
+
+`/me/password` with `scope: "login"` (default) changes the sign-in password.
+With `scope: "pin"` it sets the withdrawal PIN (4–6 digits): `currentPassword`
+is the current PIN, or the login password if no PIN is set yet.
+
+`User`: `{ id, role, status, firstName, lastName, displayName, username, email,
+loginEmail, phone, avatar, language, balance, doubleLedgerPassword, createdAt }`.
+`avatar` may be `null`; `doubleLedgerPassword` is true once a PIN is set.
+
+## Admin
+
+Mounted at `/admin`, admin only. Every change below writes an `audit_logs`
+row in the same database transaction.
+
+### Members
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| GET | `/admin/members` | `?q=&limit=&offset=` → `{ total, items: Member[] }`. `q` matches name, username, emails, invite code |
+| POST | `/admin/members` | `email`, `password` + optional `firstName`, `lastName`, `username`, `phone`, `role`, `withdrawalLimit` → `201 Member` |
+| GET | `/admin/members/:id` | `Member` |
+| PATCH | `/admin/members/:id` | Any create field; `email` is the **login** email, `password` resets it. → `{ member, changed: string[] }`. Changing your own role is `400` |
+| GET | `/admin/members/:id/audits` | `AuditEntry[]`, newest first |
+
+`Member` = `User` + `{ inviteCode, withdrawalLimit, lastLoginAt, hasApprovedDeposit }`.
+
+### Ledger
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| GET | `/admin/members/:id/transactions` | `LedgerEntry[]` (a `Transaction` plus `type`, `asset`, `address`, `receiptName`, `note`, `reviewedAt`) |
+| POST | `/admin/members/:id/adjustments` | `direction` (`credit`/`debit`), `amount`, `note?`. Applied immediately; `409` if a debit exceeds the balance |
+| POST | `/admin/transactions/:id/approve` | Pending deposit → credits balance; pending withdrawal → debits it (`409` if short) |
+| POST | `/admin/transactions/:id/reject` | `note?`. No balance change |
+
+### Orders
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| GET | `/admin/members/:id/catalog` | `?q=&min=&max=&limit=&offset=` → `{ total, items: CatalogProduct[] }`. `q` matches the title, or the start of the price if numeric. `assigned` says whether this member has it open |
+| POST | `/admin/members/:id/orders` | `productId` → `201`. `409` if already open for this member; `400` for admin accounts |
+
+## Business rules
+
+- **Assigned orders are hidden until the trader has an approved deposit.**
+  `GET /products` returns no items and `meta.depositRequired: true` until
+  then. Admin balance adjustments don't count as deposits.
+- Deposits and withdrawals are requests. Only admin approval moves the balance.
+- `withdrawalLimit` is the maximum per withdrawal request; `0` means no limit.
+- Purchasing an order moves it to the Sell tab. It doesn't move the balance
+  yet; settlement rules are still to be defined.
+- An order copies the product's price and profit % at assignment time.
+
+## Trader endpoints (`role = user`)
+
+Balances below come from the signed-in user's row.
+
+### Dashboard
 
 | Method | Path | Returns |
 | --- | --- | --- |
 | GET | `/dashboard` | `{ user, stats, balance, tutorial, capabilities, campaigns, topEarners }` |
 | GET | `/deposits/live` | `LiveDeposit[]` — powers the ticker |
 
-## Products
+### Products
 
 | Method | Path | Notes |
 | --- | --- | --- |
-| GET | `/products` | Optional `?tab=purchase\|sell\|completed` and `?state=assigned\|awaiting\|completed`. Returns `{ meta, items, counts }` |
+| GET | `/products` | The trader's orders. Optional `?tab=purchase\|sell\|completed` and `?state=assigned\|completed`. Returns `{ meta, items, counts }`; empty with `meta.depositRequired` until a deposit is approved |
 | POST | `/products/:id/purchase` | `402` when the balance is short, with `data: { required, current, missing }` |
 
-## Plans
+### Plans
 
 | Method | Path | Notes |
 | --- | --- | --- |
 | GET | `/plans` | `{ meta, items, contracts }` |
 | POST | `/plans/:id/activate` | Creates a `PENDING` contract, or `402` if underfunded |
 
-## Ledger
+### Ledger
 
 | Method | Path | Notes |
 | --- | --- | --- |
-| GET | `/transactions` | Optional `?limit=5` |
+| GET | `/transactions` | The trader's own ledger. Optional `?limit=5`. `status` is `PENDING`, `APPROVED` or `REJECTED` |
 | GET | `/deposit-assets` | Supported crypto assets and custody addresses |
-| POST | `/deposits` | `amount` (min 10), `assetId`, `receiptName?` |
-| POST | `/withdrawals` | `amount`, `address`, `pin` |
+| POST | `/deposits` | `amount` (≥ asset minimum), `assetId`, `receiptName?` → `201` pending |
+| POST | `/withdrawals` | `amount`, `address` → `201` pending. `400` above the balance or the member's withdrawal limit |
 
-Deposits and withdrawals append a `PENDING` transaction; they do not move the
-balance, since that needs admin auditing.
+Neither moves the balance; an admin approves or rejects it. The withdrawal
+PIN isn't verified yet.
 
 ## Misc
 
 | Method | Path | Returns |
 | --- | --- | --- |
-| GET | `/languages` | `Language[]` |
-| GET | `/health` | `{ status: "ok" }` (not under `/api`) |
+| GET | `/health` | `{ status: "ok" }` (not under `/api`, no auth) |
 
 ## Example
 
 ```bash
-curl -s localhost:4000/api/plans | jq '.data.items[0]'
+curl -s -c jar -X POST localhost:4000/api/auth/login \
+  -H 'content-type: application/json' \
+  -d '{"email":"trader@demo.test","password":"password123"}' > /dev/null
+curl -s -b jar localhost:4000/api/plans | jq '.data.items[0]'
 ```
 
 ```json

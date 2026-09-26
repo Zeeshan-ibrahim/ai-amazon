@@ -7,6 +7,7 @@ import { AuthLayout } from '@/components/auth/AuthLayout';
 import { Button } from '@/components/ui/Button';
 import { Input, PasswordInput } from '@/components/ui/Input';
 import { api } from '@/lib/api';
+import { homeFor } from '@/lib/auth';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -26,8 +27,8 @@ export default function SignupPage() {
     setError(null);
     setLoading(true);
     try {
-      await api.signup(form);
-      router.push('/dashboard');
+      const { user } = await api.signup(form);
+      router.push(homeFor(user.role));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to create account.');
     } finally {

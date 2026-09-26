@@ -7,6 +7,7 @@ import { AuthLayout } from '@/components/auth/AuthLayout';
 import { Button } from '@/components/ui/Button';
 import { Input, PasswordInput } from '@/components/ui/Input';
 import { api } from '@/lib/api';
+import { homeFor } from '@/lib/auth';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -20,8 +21,8 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
     try {
-      await api.login({ email, password });
-      router.push('/dashboard');
+      const { user } = await api.login({ email, password });
+      router.push(homeFor(user.role));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to sign in.');
     } finally {

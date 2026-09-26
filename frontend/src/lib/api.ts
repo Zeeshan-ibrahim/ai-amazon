@@ -1,3 +1,23 @@
+import type {
+  AuditEntry,
+  CatalogProduct,
+  LedgerEntry,
+  Member,
+  MemberInput,
+  Paged,
+  User,
+} from './types';
+
+/** `{ a: 1, b: undefined }` → `?a=1` */
+const qs = (params: Record<string, string | number | undefined>) => {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== '') search.set(key, String(value));
+  }
+  const text = search.toString();
+  return text ? `?${text}` : '';
+};
+
 const BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api';
 
@@ -31,9 +51,20 @@ export async function request<T>(
     },
     body: body === undefined ? undefined : JSON.stringify(body),
     cache: 'no-store',
+    credentials: 'include',
   });
 
   const json = await response.json().catch(() => null);
+
+  // Expired or missing session anywhere in the app → back to sign-in.
+  if (
+    response.status === 401 &&
+    !path.startsWith('/auth/') &&
+    typeof window !== 'undefined' &&
+    window.location.pathname !== '/login'
+  ) {
+    window.location.assign('/login');
+  }
 
   if (!response.ok || json?.success === false) {
     throw new ApiError(
@@ -48,13 +79,14 @@ export async function request<T>(
 
 export const api = {
   login: (body: { email: string; password: string }) =>
-    request<{ token: string }>('/auth/login', { method: 'POST', body }),
+    request<{ user: User }>('/auth/login', { method: 'POST', body }),
   signup: (body: { email: string; password: string; firstName?: string }) =>
-    request<{ token: string }>('/auth/signup', { method: 'POST', body }),
+    request<{ user: User }>('/auth/signup', { method: 'POST', body }),
+  logout: () => request<{ message: string }>('/auth/logout', { method: 'POST' }),
   forgotPassword: (body: { email: string }) =>
     request<{ message: string }>('/auth/forgot-password', { method: 'POST', body }),
 
-  me: () => request('/me'),
+  me: () => request<User>('/me'),
   updateProfile: (body: Record<string, unknown>) =>
     request('/me', { method: 'PATCH', body }),
   updatePassword: (body: Record<string, unknown>) =>
@@ -82,4 +114,41 @@ export const api = {
     request('/withdrawals', { method: 'POST', body }),
 
   languages: () => request('/languages'),
+
+  admin: {
+    members: (params: { q?: string; offset?: number }) =>
+      request<Paged<Member>>(`/admin/members${qs(params)}`),
+    createMember: (body: MemberInput) =>
+      request<Member>('/admin/members', { method: 'POST', body }),
+    member: (id: string) => request<Member>(`/admin/members/${id}`),
+    updateMember: (id: string, body: MemberInput) =>
+      request<{ member: Member; changed: string[] }>(`/admin/members/${id}`, {
+        method: 'PATCH',
+        body,
+      }),
+
+    transactions: (id: string) =>
+      request<LedgerEntry[]>(`/admin/members/${id}/transactions`),
+    adjustBalance: (
+      id: string,
+      body: { direction: 'credit' | 'debit'; amount: number; note?: string }
+    ) => request<LedgerEntry>(`/admin/members/${id}/adjustments`, { method: 'POST', body }),
+    reviewTransaction: (transactionId: string, decision: 'approve' | 'reject') =>
+      request<LedgerEntry>(`/admin/transactions/${transactionId}/${decision}`, {
+        method: 'POST',
+        body: {},
+      }),
+
+    catalog: (
+      id: string,
+      params: { q?: string; min?: number; max?: number; offset?: number }
+    ) => request<Paged<CatalogProduct>>(`/admin/members/${id}/catalog${qs(params)}`),
+    assignOrder: (id: string, productId: string) =>
+      request<{ id: string }>(`/admin/members/${id}/orders`, {
+        method: 'POST',
+        body: { productId },
+      }),
+
+    audits: (id: string) => request<AuditEntry[]>(`/admin/members/${id}/audits`),
+  },
 };

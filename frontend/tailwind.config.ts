@@ -24,6 +24,8 @@ const config: Config = {
           900: '#0C2B1E',
         },
         money: '#2E7A58',
+        // Admin panel accent.
+        gold: '#D9B45A',
         danger: '#9B2226',
         dangerSoft: '#C0392B',
       },

@@ -1,17 +1,18 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { navItems } from '@/lib/nav';
 import { cn } from '@/lib/cn';
+import { Avatar } from '@/components/ui/Avatar';
 import { CrownIcon, LogoutIcon } from '@/components/ui/Icons';
 import { Logo } from './Logo';
+import { useSession } from './SessionProvider';
 import type { User } from '@/lib/types';
 
 export function Sidebar({ user }: { user: User | null }) {
   const pathname = usePathname();
-  const router = useRouter();
+  const { logout } = useSession();
 
   return (
     <aside className="fixed inset-y-0 left-0 z-40 hidden w-[276px] flex-col bg-sidebar-veil p-4 text-white shadow-panel lg:flex">
@@ -44,13 +45,12 @@ export function Sidebar({ user }: { user: User | null }) {
         <div className="mt-auto border-t border-white/10 pt-4">
           <div className="flex items-center gap-3 px-2 pb-2">
             <div className="relative shrink-0">
-              {user?.avatar ? (
-                <Image
+              {user ? (
+                <Avatar
                   src={user.avatar}
-                  alt=""
-                  width={38}
-                  height={38}
-                  className="h-[38px] w-[38px] rounded-full object-cover ring-2 ring-amber-400/70"
+                  name={user.displayName}
+                  size={38}
+                  className="h-[38px] w-[38px] ring-2 ring-amber-400/70"
                 />
               ) : (
                 <div className="h-[38px] w-[38px] rounded-full bg-white/10" />
@@ -69,7 +69,7 @@ export function Sidebar({ user }: { user: User | null }) {
 
             <button
               type="button"
-              onClick={() => router.push('/login')}
+              onClick={logout}
               aria-label="Log out"
               className="rounded-lg p-1.5 text-white/50 transition-colors hover:bg-white/10 hover:text-white"
             >

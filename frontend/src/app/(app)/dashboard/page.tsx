@@ -1,6 +1,6 @@
 'use client';
 
-import Image from 'next/image';
+import { Avatar } from '@/components/ui/Avatar';
 import { useCallback, useState } from 'react';
 import { BalanceCard } from '@/components/dashboard/BalanceCard';
 import { CapabilitiesGrid } from '@/components/dashboard/CapabilitiesGrid';
@@ -36,12 +36,11 @@ export default function DashboardPage() {
       {/* Greeting — avatar + two-line variant on mobile, single line on desktop */}
       <header>
         <div className="flex items-center gap-3 lg:hidden">
-          <Image
+          <Avatar
             src={data.user.avatar}
-            alt=""
-            width={46}
-            height={46}
-            className="h-[46px] w-[46px] rounded-full object-cover"
+            name={data.user.displayName}
+            size={46}
+            className="h-[46px] w-[46px]"
           />
           <div>
             <p className="text-[13px] text-muted">Hi {firstName}</p>

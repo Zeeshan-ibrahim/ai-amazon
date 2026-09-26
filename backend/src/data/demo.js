@@ -1,28 +1,11 @@
 /**
  * Demo (in-memory) data source.
  *
- * Everything the API serves lives here for now. When we introduce a real
- * database each exported object below becomes a table / collection, so keep
- * the shapes stable — the frontend types mirror them 1:1.
+ * Everything the API serves that has not moved to Postgres yet. Users,
+ * balances, products, orders and transactions already live in Postgres. Each export below will
+ * become a table as its rules are defined, so keep the shapes stable — the
+ * frontend types mirror them 1:1.
  */
-
-export const user = {
-  id: 'USER_d7a751',
-  firstName: 'Sarah',
-  lastName: 'John',
-  displayName: 'Alexandra Vance',
-  username: '',
-  email: '123@gmail.com',
-  loginEmail: 'avance@email.com',
-  phone: '355466587',
-  avatar:
-    'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&h=200&fit=crop&crop=faces',
-  status: 'ACTIVE TRADER',
-  role: 'user',
-  balance: 122.0,
-  doubleLedgerPassword: true,
-  language: 'en',
-};
 
 export const dashboardStats = [
   { id: 'earnings', label: 'Earnings Tofay', value: 15493790, format: 'currency', icon: 'flame' },
@@ -80,8 +63,6 @@ export const liveDeposits = [
 ];
 
 export const productsMeta = {
-  availableBalance: 120.63,
-  completed: 12,
   requiredOrders: 25,
   notice: {
     eyebrow: 'Mandatory tradings',
@@ -90,76 +71,6 @@ export const productsMeta = {
     footnote: 'Orders guaranteed by Amazon liquidation matched pools.',
   },
 };
-
-export const products = [
-  {
-    id: 'ORD-1001',
-    name: 'OEMTOOLS OEM24884 30 Inch Oscillating Wall Fan',
-    image:
-      'https://images.unsplash.com/photo-1614547164905-5f9e0ac3bcb1?w=800&h=800&fit=crop',
-    amount: 180.0,
-    profitPercentage: 4,
-    expectedProfit: 7.2,
-    totalReturn: 187.2,
-    assignedDate: '2026-08-08',
-    state: 'assigned',
-    tab: 'purchase',
-  },
-  {
-    id: 'ORD-1002',
-    name: 'Anker 737 Power Bank PowerCore 24K',
-    image:
-      'https://images.unsplash.com/photo-1609091839311-d5365f9ff1c5?w=800&h=800&fit=crop',
-    amount: 96.5,
-    profitPercentage: 4,
-    expectedProfit: 3.86,
-    totalReturn: 100.36,
-    assignedDate: '2026-08-07',
-    state: 'awaiting',
-    tab: 'purchase',
-  },
-  {
-    id: 'ORD-0994',
-    name: 'Ninja AF101 Air Fryer 4 Quart',
-    image:
-      'https://images.unsplash.com/photo-1626074353765-517a681e40be?w=800&h=800&fit=crop',
-    amount: 129.99,
-    profitPercentage: 4,
-    expectedProfit: 5.2,
-    totalReturn: 135.19,
-    assignedDate: '2026-08-06',
-    state: 'assigned',
-    tab: 'sell',
-  },
-  {
-    id: 'ORD-0981',
-    name: 'Logitech MX Master 3S Wireless Mouse',
-    image:
-      'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=800&h=800&fit=crop',
-    amount: 99.0,
-    profitPercentage: 4,
-    expectedProfit: 3.96,
-    totalReturn: 102.96,
-    assignedDate: '2026-08-04',
-    completedDate: '2026-08-05',
-    state: 'completed',
-    tab: 'completed',
-  },
-  {
-    id: 'ORD-0975',
-    name: 'Instant Pot Duo 7-in-1 Electric Pressure Cooker',
-    image:
-      'https://images.unsplash.com/photo-1585515320310-259814833e62?w=800&h=800&fit=crop',
-    amount: 89.95,
-    profitPercentage: 4,
-    expectedProfit: 3.6,
-    totalReturn: 93.55,
-    assignedDate: '2026-08-03',
-    completedDate: '2026-08-03',
-    state: 'completed',
-    tab: 'completed',
-  },
-];
 
 export const plans = [
   {
@@ -222,29 +133,9 @@ export const planMeta = {
     'Partner directly with top-tier international digital retail houses. Secure high priority slots on bulk liquidation parcels and receive immediate yield distributions upon transaction close.',
   guarantee:
     'All committed logistic partnership capitals on "Quick on Amazon" are 100% principal insured under our dynamic retail reserve policy protocols. Yield paybacks are computed dynamically and processed autonomously back to your balance wallet directly following Super Admin auditing.',
-  availableBalance: 0,
 };
 
 export const myContracts = [];
-
-export const transactions = [
-  {
-    id: 'tx_2',
-    title: 'User successfully logged in at 8/8/2026, 8:58:17 PM',
-    createdAt: '2026-08-08T20:58:17.000Z',
-    status: 'COMPLETED',
-    amount: 0,
-    direction: 'debit',
-  },
-  {
-    id: 'tx_1',
-    title: 'Account successfully created.',
-    createdAt: '2026-08-08T20:58:16.000Z',
-    status: 'COMPLETED',
-    amount: 0,
-    direction: 'debit',
-  },
-];
 
 export const languages = [
   { code: 'en', label: 'English' },

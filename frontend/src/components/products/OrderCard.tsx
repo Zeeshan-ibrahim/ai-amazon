@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { Button } from '@/components/ui/Button';
+import { BoxIcon } from '@/components/ui/Icons';
 import { cn } from '@/lib/cn';
 import { formatCurrency, formatDate, formatPercent } from '@/lib/format';
 import type { Product } from '@/lib/types';
@@ -62,13 +63,19 @@ export function OrderCard({
       </header>
 
       <div className="flex items-center justify-center bg-white px-6 py-8">
-        <Image
-          src={product.image}
-          alt={product.name}
-          width={420}
-          height={420}
-          className="h-[220px] w-auto object-contain mix-blend-multiply sm:h-[300px]"
-        />
+        {product.image ? (
+          <Image
+            src={product.image}
+            alt={product.name}
+            width={420}
+            height={420}
+            className="h-[220px] w-auto object-contain mix-blend-multiply sm:h-[300px]"
+          />
+        ) : (
+          <div className="flex h-[220px] w-full items-center justify-center rounded-xl bg-cream text-subtle sm:h-[300px]">
+            <BoxIcon className="h-16 w-16" />
+          </div>
+        )}
       </div>
 
       <div className="px-5 pb-5 sm:px-6 sm:pb-6">

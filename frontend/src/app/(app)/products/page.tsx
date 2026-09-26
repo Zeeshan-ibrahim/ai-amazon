@@ -10,6 +10,7 @@ import { OrderCard } from '@/components/products/OrderCard';
 import { OrderMetrics } from '@/components/products/OrderMetrics';
 import { OrderNotice } from '@/components/products/OrderNotice';
 import { DepositModal } from '@/components/ledger/DepositModal';
+import { Button } from '@/components/ui/Button';
 import { SegmentedControl, Tabs } from '@/components/ui/Tabs';
 import { EmptyState, ErrorState, LoadingBlock } from '@/components/ui/States';
 import { useApi } from '@/hooks/useApi';
@@ -117,7 +118,17 @@ export default function ProductsPage() {
         </p>
       )}
 
-      {!active ? (
+      {data.meta.depositRequired ? (
+        <div className="flex flex-col items-center gap-4 rounded-card border border-dashed border-line px-6 py-14 text-center">
+          <div>
+            <p className="text-sm font-medium text-ink">Make your first deposit to unlock orders.</p>
+            <p className="mt-1.5 text-[13px] text-subtle">
+              Assigned orders appear here once a deposit has been approved.
+            </p>
+          </div>
+          <Button onClick={() => setDepositOpen(true)}>Deposit funds</Button>
+        </div>
+      ) : !active ? (
         <EmptyState
           title="No orders in this queue right now."
           hint="New liquidation lots are assigned throughout the day."

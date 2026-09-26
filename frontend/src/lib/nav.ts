@@ -1,10 +1,18 @@
 import {
+  BagIcon,
   BoxIcon,
   GridIcon,
   HistoryIcon,
+  ImageIcon,
+  LayoutIcon,
   MonitorIcon,
   PlanIcon,
   SettingsIcon,
+  ShieldIcon,
+  SwapIcon,
+  UserIcon,
+  UsersIcon,
+  WalletIcon,
 } from '@/components/ui/Icons';
 
 export const navItems = [
@@ -13,4 +21,22 @@ export const navItems = [
   { href: '/plans', label: 'Plans', mobileLabel: 'Plans', icon: PlanIcon, mobileIcon: PlanIcon },
   { href: '/history', label: 'History', mobileLabel: 'History', icon: HistoryIcon, mobileIcon: HistoryIcon },
   { href: '/settings', label: 'Settings', mobileLabel: 'Settings', icon: SettingsIcon, mobileIcon: SettingsIcon },
+];
+
+/**
+ * Admin panel sections, in sidebar order. `slug` is the URL segment under
+ * /admin; `label` is the sidebar text, `title` the page heading. `built`
+ * sections have their own `app/admin/<slug>/` page; the rest render the
+ * `[section]` placeholder.
+ */
+export const adminNavItems = [
+  { slug: 'analytics', label: 'Analytics', title: 'Analytics', icon: LayoutIcon },
+  { slug: 'members', label: 'Members', title: 'Members', icon: UsersIcon, built: true },
+  { slug: 'products', label: 'Products', title: 'Products', icon: BagIcon },
+  { slug: 'plans', label: 'Plans', title: 'Plans', icon: ShieldIcon },
+  { slug: 'plan-requests', label: 'Plan Req', title: 'Plan Requests', icon: SwapIcon },
+  { slug: 'financials', label: 'Financials', title: 'Financials', icon: SwapIcon },
+  { slug: 'banners', label: 'Banners', title: 'Banners', icon: ImageIcon },
+  { slug: 'wallets', label: 'Wallets', title: 'Wallets', icon: WalletIcon },
+  { slug: 'account', label: 'My Acc', title: 'My Account', icon: UserIcon },
 ];

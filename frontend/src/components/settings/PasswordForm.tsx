@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
+import { useSession } from '@/components/layout/SessionProvider';
 import { Button } from '@/components/ui/Button';
 import { Card, Eyebrow } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -10,12 +11,15 @@ import { api } from '@/lib/api';
 const EMPTY = { currentPassword: '', newPassword: '', confirmPassword: '' };
 
 export function PasswordForm() {
+  const { user, refresh } = useSession();
   const [mode, setMode] = useState<'login' | 'pin'>('login');
   const [form, setForm] = useState(EMPTY);
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [message, setMessage] = useState<string | null>(null);
 
   const isPin = mode === 'pin';
+  // Until a PIN exists, the login password authorizes setting the first one.
+  const firstPin = isPin && !user?.doubleLedgerPassword;
 
   const update = (key: keyof typeof form, value: string) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -29,6 +33,7 @@ export function PasswordForm() {
       setForm(EMPTY);
       setStatus('saved');
       setMessage(isPin ? 'Withdrawal PIN updated.' : 'Password updated.');
+      if (firstPin) refresh();
     } catch (error) {
       setStatus('error');
       setMessage(
@@ -60,10 +65,10 @@ export function PasswordForm() {
 
       <form onSubmit={onSubmit} className="mt-5 space-y-4">
         <Input
-          label={isPin ? 'Current PIN' : 'Current password'}
+          label={firstPin ? 'Login password' : isPin ? 'Current PIN' : 'Current password'}
           type="password"
           autoComplete="current-password"
-          placeholder={isPin ? '••••••' : 'password'}
+          placeholder={isPin && !firstPin ? '••••••' : 'password'}
           value={form.currentPassword}
           onChange={(e) => update('currentPassword', e.target.value)}
         />

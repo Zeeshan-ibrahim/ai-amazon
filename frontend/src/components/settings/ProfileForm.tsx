@@ -1,7 +1,7 @@
 'use client';
 
-import Image from 'next/image';
 import { useRef, useState, type FormEvent } from 'react';
+import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
 import { Card, Eyebrow } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -55,12 +55,11 @@ export function ProfileForm({
 
       <form onSubmit={onSubmit} className="mt-6 space-y-5">
         <div className="flex items-center gap-4 border-b border-line pb-5">
-          <Image
+          <Avatar
             src={user.avatar}
-            alt=""
-            width={52}
-            height={52}
-            className="h-[52px] w-[52px] rounded-full object-cover"
+            name={user.displayName}
+            size={52}
+            className="h-[52px] w-[52px]"
           />
           <div className="min-w-0 flex-1">
             <p className="text-[15px] font-medium text-ink">Profile picture</p>

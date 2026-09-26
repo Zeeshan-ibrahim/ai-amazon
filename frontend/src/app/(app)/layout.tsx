@@ -4,7 +4,7 @@ import { SessionProvider } from '@/components/layout/SessionProvider';
 
 export default function AppGroupLayout({ children }: { children: ReactNode }) {
   return (
-    <SessionProvider>
+    <SessionProvider role="user">
       <AppShell>{children}</AppShell>
     </SessionProvider>
   );

@@ -181,3 +181,101 @@ export const LogoMark = (p: IconProps) => (
     <path d="M2 30C2 16 6.5 4 12.5 4c4.2 0 5.6 4.4 5.6 10.2 0 3-.4 6.3-1 9.3 2.4-6.6 5.6-13.8 9.4-13.8 3 0 4 2.9 4 7.2 0 2.5-.3 5.3-.8 7.9 2-5.4 4.6-10.6 7.5-10.6 2.4 0 3.3 2.4 3.3 5.6 0 4-1.2 8.6-2.6 12.2h-4.6c1.3-3.4 2.4-7.6 2.4-10.4 0-1-.1-1.6-.6-1.6-1.6 0-5 8.4-6.4 12h-4.6c1.2-3.8 2.2-8.7 2.2-11.8 0-1.3-.2-2-.8-2-2 0-5.8 9.2-7.4 13.8H13c1.4-4.6 2.6-11 2.6-15 0-2.6-.5-3.9-1.8-3.9-3 0-6.6 10.6-6.6 20.9H2Z" />
   </svg>
 );
+
+/* ---------------------------------------------------------- admin nav */
+
+export const LayoutIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <rect x="3.5" y="3.5" width="7" height="9" rx="1.5" />
+    <rect x="13.5" y="3.5" width="7" height="5" rx="1.5" />
+    <rect x="13.5" y="11.5" width="7" height="9" rx="1.5" />
+    <rect x="3.5" y="15.5" width="7" height="5" rx="1.5" />
+  </svg>
+);
+
+export const UsersIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <circle cx="9" cy="8" r="3.5" />
+    <path d="M2.5 20.5c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6" />
+    <path d="M15 4.7a3.5 3.5 0 0 1 0 6.6M17.5 14.8c2.4.6 4 2.7 4 5.7" />
+  </svg>
+);
+
+export const BagIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <rect x="4" y="3.5" width="16" height="17" rx="2.5" />
+    <path d="M4 8h16M8.5 11.5a3.5 3.5 0 0 0 7 0" />
+  </svg>
+);
+
+export const SwapIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M20 8H4.5M8 4.5 4.5 8 8 11.5" />
+    <path d="M4 16h15.5M16 12.5l3.5 3.5-3.5 3.5" />
+  </svg>
+);
+
+export const ImageIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <rect x="3.5" y="3.5" width="17" height="17" rx="2.5" />
+    <circle cx="9" cy="9" r="1.8" />
+    <path d="m20.5 15-5-5-11 10.5" />
+  </svg>
+);
+
+export const WalletIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M19 7.5V6a2.5 2.5 0 0 0-2.5-2.5h-10A2.5 2.5 0 0 0 4 6v12a2.5 2.5 0 0 0 2.5 2.5h12A1.5 1.5 0 0 0 20 19v-2" />
+    <path d="M4 7.5h15a1.5 1.5 0 0 1 1.5 1.5v3" />
+    <circle cx="18" cy="14.5" r="2.5" />
+  </svg>
+);
+
+export const UserIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <circle cx="12" cy="8" r="4" />
+    <path d="M4.5 21c0-4 3.4-6.5 7.5-6.5s7.5 2.5 7.5 6.5" />
+  </svg>
+);
+
+export const SearchIcon = (p: IconProps) => (
+  <svg {...base(p)} strokeWidth={1.8}>
+    <circle cx="11" cy="11" r="7" />
+    <path d="m20.5 20.5-4.5-4.5" />
+  </svg>
+);
+
+export const UserPlusIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <circle cx="9.5" cy="8" r="4" />
+    <path d="M2.5 20.5c0-3.8 3.1-6.5 7-6.5 1.6 0 3 .4 4.2 1.2M18.5 13.5v7M15 17h7" />
+  </svg>
+);
+
+export const EditIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M11.5 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5.5" />
+    <path d="M17.6 3.4a2 2 0 0 1 2.9 2.9L12 14.8 8.5 15.5l.7-3.5Z" />
+  </svg>
+);
+
+export const ChevronLeftIcon = (p: IconProps) => (
+  <svg {...base(p)} strokeWidth={2}>
+    <path d="m15 5-7 7 7 7" />
+  </svg>
+);
+
+export const CartIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M2.5 3.5h2.6l2.4 11.2a1.5 1.5 0 0 0 1.5 1.2h8.6a1.5 1.5 0 0 0 1.5-1.2L21 7.5H6" />
+    <circle cx="9.5" cy="20" r="1.2" />
+    <circle cx="17" cy="20" r="1.2" />
+  </svg>
+);
+
+export const LayersIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="m12 3 9 4.5-9 4.5-9-4.5Z" />
+    <path d="m3 12 9 4.5 9-4.5M3 16.5 12 21l9-4.5" />
+  </svg>
+);
