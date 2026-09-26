@@ -96,7 +96,9 @@ export default function MemberPage() {
 
       {tab === 'particulars' && <ParticularsTab member={member} onSaved={setData} />}
       {tab === 'ledger' && <LedgerTab member={member} onBalanceChange={refetch} />}
-      {tab === 'orders' && <OrdersTab member={member} onGoToLedger={() => setTab('ledger')} />}
+      {tab === 'orders' && (
+        <OrdersTab member={member} onGoToLedger={() => setTab('ledger')} onBalanceChange={refetch} />
+      )}
       {tab === 'audits' && <AuditsTab member={member} />}
     </div>
   );

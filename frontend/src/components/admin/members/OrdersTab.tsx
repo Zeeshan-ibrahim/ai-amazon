@@ -3,6 +3,7 @@
 import { useCallback, useState } from 'react';
 import Image from 'next/image';
 import { AdminButton, AdminCard, AdminSearch, Notice } from '@/components/admin/ui';
+import { AssignedOrders } from '@/components/admin/members/AssignedOrders';
 import { BoxIcon, CheckIcon, LayersIcon } from '@/components/ui/Icons';
 import { EmptyState, ErrorState, Skeleton } from '@/components/ui/States';
 import { useDebounced } from '@/hooks/useDebounced';
@@ -22,11 +23,20 @@ const SEGMENTS = [
 
 type SegmentId = (typeof SEGMENTS)[number]['id'];
 
-export function OrdersTab({ member, onGoToLedger }: { member: Member; onGoToLedger: () => void }) {
+export function OrdersTab({
+  member,
+  onGoToLedger,
+  onBalanceChange,
+}: {
+  member: Member;
+  onGoToLedger: () => void;
+  onBalanceChange: () => void;
+}) {
   const [query, setQuery] = useState('');
   const [segmentId, setSegmentId] = useState<SegmentId>('all');
   const [assigningId, setAssigningId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [assignedVersion, setAssignedVersion] = useState(0);
   const q = useDebounced(query.trim());
 
   const segment = SEGMENTS.find((s) => s.id === segmentId)!;
@@ -51,6 +61,7 @@ export function OrdersTab({ member, onGoToLedger }: { member: Member; onGoToLedg
       list.setItems((items) =>
         items.map((item) => (item.id === product.id ? { ...item, assigned: true } : item))
       );
+      setAssignedVersion((v) => v + 1);
     } catch (err) {
       setError(userMessage(err, 'Could not assign this contract.'));
     } finally {
@@ -58,111 +69,137 @@ export function OrdersTab({ member, onGoToLedger }: { member: Member; onGoToLedg
     }
   };
 
+  const release = (productId: string) =>
+    list.setItems((items) =>
+      items.map((item) => (item.id === productId ? { ...item, assigned: false } : item))
+    );
+
   return (
-    <AdminCard className="space-y-7 sm:p-9">
+    <AdminCard className="grid gap-7 sm:p-9 xl:grid-cols-2 xl:items-start">
       {!member.hasApprovedDeposit && (
-        <Notice tone="warn">
-          Contracts you assign stay hidden from this member until they have an approved
-          deposit.{' '}
-          <button type="button" onClick={onGoToLedger} className="font-bold underline underline-offset-2">
-            Review their ledger
-          </button>
-        </Notice>
+        <div className="xl:col-span-2">
+          <Notice tone="warn">
+            Contracts you assign stay hidden from this member until they have an approved deposit.{' '}
+            <button
+              type="button"
+              onClick={onGoToLedger}
+              className="font-bold underline underline-offset-2"
+            >
+              Review their ledger
+            </button>
+          </Notice>
+        </div>
       )}
 
-      <div className="rounded-[28px] border-2 border-ink bg-[#fafafa] p-5 sm:p-8">
-        <span className="inline-block rounded-full bg-black px-5 py-1.5 text-[12px] font-extrabold uppercase tracking-[0.16em] text-gold">
-          Allocation hub
-        </span>
-        <h2 className="mt-5 text-[20px] font-black uppercase tracking-tight text-ink">
-          Find &amp; assign contracts
-        </h2>
-        <p className="mt-1 text-[14px] text-muted">
-          Filter available strategic contracts by price points or names to allocate
-          immediately to the user workspace.
-        </p>
+      <div className="min-w-0 space-y-7">
+        <div className="rounded-[28px] border-2 border-ink bg-[#fafafa] p-5 sm:p-8">
+          <span className="inline-block rounded-full bg-black px-5 py-1.5 text-[12px] font-extrabold uppercase tracking-[0.16em] text-gold">
+            Allocation hub
+          </span>
+          <h2 className="mt-5 text-[20px] font-black uppercase tracking-tight text-ink">
+            Find &amp; assign contracts
+          </h2>
+          <p className="mt-1 text-[14px] text-muted">
+            Filter available strategic contracts by price points or names to allocate immediately to
+            the user workspace.
+          </p>
 
-        <AdminSearch
-          tone="plain"
-          value={query}
-          onChange={setQuery}
-          placeholder="Search by price or title (e.g. 500, laser)..."
-          className="mt-6"
-        />
+          <AdminSearch
+            tone="plain"
+            value={query}
+            onChange={setQuery}
+            placeholder="Search by price or title (e.g. 500, laser)..."
+            className="mt-6"
+          />
 
-        <p className="mt-6 text-[11px] font-bold uppercase tracking-[0.16em] text-subtle">
-          Quick price segments
-        </p>
-        <div className="mt-3 flex flex-wrap gap-2.5">
-          {SEGMENTS.map((s) => (
-            <button
-              key={s.id}
-              type="button"
-              aria-pressed={segmentId === s.id}
-              onClick={() => setSegmentId(s.id)}
-              className={cn(
-                'rounded-xl px-5 py-2.5 text-[14px] font-bold transition-colors',
-                segmentId === s.id
-                  ? 'bg-black text-white'
-                  : 'border border-black/10 bg-white text-ink hover:border-black/30'
-              )}
-            >
-              {s.label}
-            </button>
-          ))}
+          <p className="mt-6 text-[11px] font-bold uppercase tracking-[0.16em] text-subtle">
+            Quick price segments
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2.5">
+            {SEGMENTS.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                aria-pressed={segmentId === s.id}
+                onClick={() => setSegmentId(s.id)}
+                className={cn(
+                  'rounded-xl px-5 py-2.5 text-[14px] font-bold transition-colors',
+                  segmentId === s.id
+                    ? 'bg-black text-white'
+                    : 'border border-black/10 bg-white text-ink hover:border-black/30'
+                )}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-[28px] border border-black/[0.07] p-4 sm:p-7">
+          <div className="flex items-center justify-between gap-3 border-b border-black/[0.06] pb-5">
+            <p className="flex items-center gap-3 text-[13px] font-extrabold uppercase tracking-[0.16em] text-subtle">
+              <LayersIcon className="h-5 w-5" />
+              Available contracts
+            </p>
+            <span className="rounded-full bg-black/[0.04] px-4 py-1.5 text-[13px] font-bold text-ink">
+              {formatNumber(list.total)} entries
+            </span>
+          </div>
+
+          {error && (
+            <div className="mt-5">
+              <Notice tone="error">{error}</Notice>
+            </div>
+          )}
+
+          {list.error ? (
+            <div className="mt-5">
+              <ErrorState message={list.error} onRetry={list.reload} />
+            </div>
+          ) : list.loading ? (
+            <div className="mt-5 space-y-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-24 w-full rounded-3xl" />
+              ))}
+            </div>
+          ) : list.items.length === 0 ? (
+            <EmptyState className="mt-5" title="No contracts match these filters." />
+          ) : (
+            <ul className="mt-5 space-y-4">
+              {list.items.map((product) => (
+                <ContractRow
+                  key={product.id}
+                  product={product}
+                  assigning={assigningId === product.id}
+                  disabled={assigningId !== null}
+                  onAssign={() => assign(product)}
+                />
+              ))}
+            </ul>
+          )}
+
+          {list.hasMore && !list.loading && (
+            <div className="mt-6 text-center">
+              <AdminButton
+                variant="outline"
+                size="sm"
+                loading={list.loadingMore}
+                onClick={list.loadMore}
+              >
+                Load more ({list.items.length} of {formatNumber(list.total)})
+              </AdminButton>
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="rounded-[28px] border border-black/[0.07] p-4 sm:p-7">
-        <div className="flex items-center justify-between gap-3 border-b border-black/[0.06] pb-5">
-          <p className="flex items-center gap-3 text-[13px] font-extrabold uppercase tracking-[0.16em] text-subtle">
-            <LayersIcon className="h-5 w-5" />
-            Available contracts
-          </p>
-          <span className="rounded-full bg-black/[0.04] px-4 py-1.5 text-[13px] font-bold text-ink">
-            {formatNumber(list.total)} entries
-          </span>
-        </div>
-
-        {error && (
-          <div className="mt-5">
-            <Notice tone="error">{error}</Notice>
-          </div>
-        )}
-
-        {list.error ? (
-          <div className="mt-5">
-            <ErrorState message={list.error} onRetry={list.reload} />
-          </div>
-        ) : list.loading ? (
-          <div className="mt-5 space-y-4">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} className="h-24 w-full rounded-3xl" />
-            ))}
-          </div>
-        ) : list.items.length === 0 ? (
-          <EmptyState className="mt-5" title="No contracts match these filters." />
-        ) : (
-          <ul className="mt-5 space-y-4">
-            {list.items.map((product) => (
-              <ContractRow
-                key={product.id}
-                product={product}
-                assigning={assigningId === product.id}
-                disabled={assigningId !== null}
-                onAssign={() => assign(product)}
-              />
-            ))}
-          </ul>
-        )}
-
-        {list.hasMore && !list.loading && (
-          <div className="mt-6 text-center">
-            <AdminButton variant="outline" size="sm" loading={list.loadingMore} onClick={list.loadMore}>
-              Load more ({list.items.length} of {formatNumber(list.total)})
-            </AdminButton>
-          </div>
-        )}
+      <div className="min-w-0 xl:sticky xl:top-6">
+        <AssignedOrders
+          member={member}
+          reloadKey={assignedVersion}
+          onReleased={release}
+          onBalanceChange={onBalanceChange}
+        />
       </div>
     </AdminCard>
   );
@@ -183,12 +220,20 @@ function ContractRow({
     <li
       className={cn(
         'flex items-center gap-4 rounded-3xl p-4 sm:gap-5 sm:p-5',
-        product.assigned ? 'border-2 border-ink bg-[#fafafa]' : 'border border-black/[0.08] bg-white'
+        product.assigned
+          ? 'border-2 border-ink bg-[#fafafa]'
+          : 'border border-black/[0.08] bg-white'
       )}
     >
       <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-black/[0.06] bg-white sm:h-20 sm:w-20">
         {product.image ? (
-          <Image src={product.image} alt="" width={80} height={80} className="h-full w-full object-cover" />
+          <Image
+            src={product.image}
+            alt=""
+            width={80}
+            height={80}
+            className="h-full w-full object-cover"
+          />
         ) : (
           <BoxIcon className="h-8 w-8 text-subtle" />
         )}

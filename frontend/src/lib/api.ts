@@ -1,4 +1,6 @@
 import type {
+  AdminOrder,
+  AdminOrderEdit,
   AuditEntry,
   CatalogProduct,
   FaqItem,
@@ -184,6 +186,13 @@ export const api = {
         method: 'POST',
         body: { productId },
       }),
+
+    orders: (id: string) => request<AdminOrder[]>(`/admin/members/${id}/orders`),
+    /** Status changes settle through the member's ledger, like the trader's own buy/sell. */
+    updateOrder: (id: string, orderId: string, body: AdminOrderEdit) =>
+      request<AdminOrder>(`/admin/members/${id}/orders/${orderId}`, { method: 'PATCH', body }),
+    removeOrder: (id: string, orderId: string) =>
+      request<{ id: string }>(`/admin/members/${id}/orders/${orderId}`, { method: 'DELETE' }),
 
     audits: (id: string) => request<AuditEntry[]>(`/admin/members/${id}/audits`),
 

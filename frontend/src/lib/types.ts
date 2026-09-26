@@ -192,6 +192,26 @@ export type CatalogProduct = {
   assigned: boolean;
 };
 
+export type OrderStatus = 'assigned' | 'purchased' | 'completed';
+
+/** A member's order as the admin sees it (Orders tab, right column). */
+export type AdminOrder = {
+  id: string;
+  productId: string;
+  title: string;
+  image: string | null;
+  price: number;
+  profitPercentage: number;
+  profit: number;
+  totalReturn: number;
+  status: OrderStatus;
+  assignedAt: string;
+  purchasedAt: string | null;
+  completedAt: string | null;
+};
+
+export type AdminOrderEdit = Partial<Pick<AdminOrder, 'price' | 'profitPercentage' | 'status'>>;
+
 /** The admin's view of a transaction: adds the receipt and internal note. */
 export type LedgerEntry = Transaction & {
   receiptName: string | null;

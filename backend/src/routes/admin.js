@@ -10,7 +10,14 @@ import { Router } from 'express';
 import { withTransaction } from '../db/pool.js';
 import { AUDIT, listAuditsForUser, recordAudit } from '../models/audit.js';
 import { getMemberRow, listMembers, toMember, updateMember } from '../models/members.js';
-import { assignOrder } from '../models/orders.js';
+import {
+  assignOrder,
+  listOrdersForUser,
+  ORDER_STATUSES,
+  removeOrderByAdmin,
+  toAdminOrder,
+  updateOrderByAdmin,
+} from '../models/orders.js';
 import { listCatalog } from '../models/products.js';
 import {
   adjustBalance,
@@ -284,6 +291,56 @@ router.post('/members/:id/orders', async (req, res) => {
     if (err.code === '23505') return fail(res, 409, 'Already assigned to this member.');
     throw err;
   }
+});
+
+router.get('/members/:id/orders', async (req, res) => {
+  ok(res, (await listOrdersForUser(req.member.id, { newestFirst: true })).map(toAdminOrder));
+});
+
+// Column limits: price NUMERIC(14,2) > 0, profit NUMERIC(6,3) >= 0.
+const MAX_PRICE = 999_999_999_999.99;
+const MAX_PROFIT_PERCENTAGE = 999.999;
+
+/** `{ price?, profitPercentage?, status? }` from the Custom Edit panel. */
+function readOrderEdit(body) {
+  const { price, profitPercentage, status } = body ?? {};
+  const edit = {};
+  if (price !== undefined) {
+    edit.price = money(price);
+    if (!(edit.price > 0 && edit.price <= MAX_PRICE)) return { error: 'Enter a price greater than $0.' };
+  }
+  if (profitPercentage !== undefined) {
+    const n = Number(profitPercentage);
+    edit.profitPercentage = Number.isFinite(n) ? Math.round(n * 1000) / 1000 : NaN;
+    if (!(edit.profitPercentage >= 0 && edit.profitPercentage <= MAX_PROFIT_PERCENTAGE)) {
+      return { error: 'Enter a profit percentage between 0 and 999.999.' };
+    }
+  }
+  if (status !== undefined) {
+    if (!ORDER_STATUSES.includes(status)) return { error: 'Unknown order status.' };
+    edit.status = status;
+  }
+  return { edit };
+}
+
+router.patch('/members/:id/orders/:orderId', async (req, res) => {
+  if (!UUID_PATTERN.test(req.params.orderId)) return fail(res, 404, 'Order not found.');
+  const { error, edit } = readOrderEdit(req.body);
+  if (error) return fail(res, 400, error);
+
+  const order = await updateOrderByAdmin({
+    orderId: req.params.orderId,
+    userId: req.member.id,
+    adminId: req.user.id,
+    ...edit,
+  });
+  ok(res, toAdminOrder(order));
+});
+
+router.delete('/members/:id/orders/:orderId', async (req, res) => {
+  if (!UUID_PATTERN.test(req.params.orderId)) return fail(res, 404, 'Order not found.');
+  await removeOrderByAdmin({ orderId: req.params.orderId, userId: req.member.id, adminId: req.user.id });
+  ok(res, { id: req.params.orderId });
 });
 
 /* -------------------------------------------------------------- audits */

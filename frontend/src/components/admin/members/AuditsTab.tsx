@@ -15,6 +15,8 @@ const ACTION_LABELS: Record<string, string> = {
   'order.assigned': 'Contract assigned',
   'order.purchased': 'Order purchased',
   'order.sold': 'Order sold',
+  'order.updated': 'Contract edited',
+  'order.removed': 'Contract removed',
   'balance.adjusted': 'Balance adjusted',
   'deposit.requested': 'Deposit requested',
   'withdrawal.requested': 'Withdrawal requested',
@@ -49,6 +51,16 @@ function describe({ action, details: d }: AuditEntry): string | null {
       return `Debited ${money(d.amount)} · new balance ${money(d.balance)}`;
     case 'order.sold':
       return `Credited ${money(d.amount)} · new balance ${money(d.balance)}`;
+    case 'order.updated': {
+      const changes = (d.changes ?? {}) as Record<string, { from?: unknown; to?: unknown }>;
+      return Object.entries(changes)
+        .map(([field, c]) =>
+          field === 'price' ? `price: ${money(c.from)} → ${money(c.to)}` : `profit: ${show(c.from)}% → ${show(c.to)}%`
+        )
+        .join(' · ');
+    }
+    case 'order.removed':
+      return `Price ${money(d.price)}`;
     case 'balance.adjusted':
       return [`${show(d.direction)} ${money(d.amount)}`, `new balance ${money(d.balance)}`, d.note && `“${d.note}”`]
         .filter(Boolean)

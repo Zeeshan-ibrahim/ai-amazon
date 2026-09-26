@@ -30,6 +30,18 @@ export const formatPercent = (value: number) =>
 export const formatSignedCurrency = (value: number, direction: 'credit' | 'debit') =>
   `${direction === 'credit' ? '+' : '-'}${formatCurrency(Math.abs(value))}`;
 
+/**
+ * An order's profit and total return in dollars, rounded half-up to the cent
+ * with integer math — the same rule the API settles with (`profitCentsOf` in
+ * backend/src/models/orders.js), so previews match what the ledger pays.
+ */
+export function orderReturn(price: number, profitPercentage: number) {
+  const cents = BigInt(Math.round(price * 100));
+  const milli = BigInt(Math.round(profitPercentage * 1000));
+  const profitCents = Number((cents * milli + BigInt(50_000)) / BigInt(100_000));
+  return { profit: profitCents / 100, total: (Number(cents) + profitCents) / 100 };
+}
+
 /** 8/8/2026 */
 export const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString('en-US');
