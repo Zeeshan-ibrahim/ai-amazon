@@ -7,6 +7,8 @@ import { pool } from '../db/pool.js';
 export const AUDIT = Object.freeze({
   MEMBER_CREATED: 'member.created',
   MEMBER_UPDATED: 'member.updated',
+  SUB_ADMIN_RELEASED: 'subadmin.released',
+  SUB_ADMIN_DELETED: 'subadmin.deleted',
   ORDER_ASSIGNED: 'order.assigned',
   ORDER_PURCHASED: 'order.purchased',
   ORDER_SOLD: 'order.sold',

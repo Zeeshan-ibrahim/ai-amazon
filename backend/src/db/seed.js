@@ -5,7 +5,10 @@
  *   trader@demo.test  approved deposit → sees their assigned orders
  *   locked@demo.test  pending deposit only → assigned orders stay hidden
  *                     until an admin approves it (Members → Ledger)
- *   admin@demo.test   admin panel
+ *   admin@demo.test     super-admin: the whole admin portal
+ *   subadmin@demo.test  sub-admin: owns nora@ and sam@, one plan and one
+ *                       product, and has a pending deposit for the
+ *                       super-admin to review (Financials)
  */
 import { pool, query } from './pool.js';
 import { findByEmail, hashSecret, ROLES } from '../models/users.js';
@@ -43,13 +46,18 @@ const accounts = [
   },
   { email: 'mia.chen@demo.test', role: ROLES.USER, username: 'miachen', first_name: 'Mia', last_name: 'Chen', balance: 4210.5 },
   { email: 'leo.martins@demo.test', role: ROLES.USER, username: 'leom', first_name: 'Leo', last_name: 'Martins', balance: 318.2 },
-  { email: 'admin@demo.test', role: ROLES.ADMIN, username: 'admin', balance: 0 },
+  { email: 'admin@demo.test', role: ROLES.SUPER_ADMIN, username: 'admin', balance: 0 },
+  { email: 'subadmin@demo.test', role: ROLES.SUB_ADMIN, username: 'subadmin', first_name: 'Sara', last_name: 'Khan', balance: 500 },
+  // Owned by the sub-admin, so only they and the super-admin see them.
+  { email: 'nora.ali@demo.test', role: ROLES.USER, username: 'noraali', first_name: 'Nora', last_name: 'Ali', balance: 750, owner: 'subadmin@demo.test' },
+  { email: 'sam.reed@demo.test', role: ROLES.USER, username: 'samreed', first_name: 'Sam', last_name: 'Reed', balance: 0, owner: 'subadmin@demo.test' },
 ];
 
-for (const { withdrawal_pin, ...account } of accounts) {
+for (const { withdrawal_pin, owner, ...account } of accounts) {
   if (await findByEmail(account.email)) continue;
   const row = {
     ...account,
+    created_by: owner ? (await findByEmail(owner)).id : null,
     password_hash: await hashSecret(PASSWORD),
     withdrawal_pin_hash: withdrawal_pin ? await hashSecret(withdrawal_pin) : null,
   };
@@ -134,6 +142,25 @@ if (planCount[0].n === 0) {
   console.log(`created ${plans.length} plans`);
 }
 
+/* ------------------------------------------------ sub-admin's own records */
+
+const subAdmin = await findByEmail('subadmin@demo.test');
+
+const { rows: subPlans } = await query('SELECT 1 FROM plans WHERE created_by = $1 LIMIT 1', [subAdmin.id]);
+if (!subPlans.length) {
+  await query(
+    `INSERT INTO plans (name, tag, price, description, created_by)
+     VALUES ('Starter Package', 'Starter', 250, 'Only shown to Sara''s members', $1)`,
+    [subAdmin.id]
+  );
+  await query(
+    `INSERT INTO products (title, price, profit_percentage, created_by)
+     VALUES ('Sara''s Pick: Bose QuietComfort Earbuds II', 279, 3, $1)`,
+    [subAdmin.id]
+  );
+  console.log('created a plan and a product for subadmin@demo.test');
+}
+
 /* ------------------------------------------------------------- banners */
 
 const bannerImg = (id) => `https://images.unsplash.com/${id}?w=1200&h=675&fit=crop`;
@@ -213,6 +240,10 @@ await seedLedger('trader@demo.test', [['deposit', 122, 'approved']]);
 await seedLedger('locked@demo.test', [['deposit', 250, 'pending']]);
 await seedLedger('mia.chen@demo.test', [['deposit', 4210.5, 'approved']]);
 await seedLedger('leo.martins@demo.test', [['deposit', 318.2, 'approved']]);
+await seedLedger('nora.ali@demo.test', [['deposit', 750, 'approved'], ['withdrawal', 100, 'pending']]);
+await seedLedger('sam.reed@demo.test', [['deposit', 150, 'pending']]);
+// The sub-admin's own balance; the pending one waits for the super-admin.
+await seedLedger('subadmin@demo.test', [['deposit', 500, 'approved'], ['deposit', 200, 'pending']]);
 
 await seedOrders('trader@demo.test', 3);
 await seedOrders('locked@demo.test', 2);

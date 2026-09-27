@@ -1,7 +1,14 @@
 import bcrypt from 'bcryptjs';
 import { pool, query } from '../db/pool.js';
 
-export const ROLES = Object.freeze({ USER: 'user', ADMIN: 'admin' });
+export const ROLES = Object.freeze({
+  USER: 'user',
+  SUB_ADMIN: 'sub_admin',
+  SUPER_ADMIN: 'super_admin',
+});
+
+/** Roles that use the admin portal. See docs/roles.md. */
+export const ADMIN_ROLES = Object.freeze([ROLES.SUPER_ADMIN, ROLES.SUB_ADMIN]);
 
 const BCRYPT_COST = 12;
 
@@ -44,6 +51,28 @@ export function toPublicUser(row) {
   };
 }
 
+/**
+ * SQL condition: `column` is a trader owned by the sub-admin whose id is
+ * bound at `param`. Scopes a sub-admin's queries to their own users.
+ */
+export const ownedUserSql = (column, param) =>
+  `${column} IN (SELECT id FROM users WHERE created_by = ${param} AND role = 'user')`;
+
+/**
+ * `{ id, handle }` of the sub-admin who created a row, or null when the
+ * super-admin owns it. Needs `created_by` plus `added_by_username` and
+ * `added_by_email` from a join on the creator.
+ */
+export const addedByOf = (row) =>
+  row.created_by
+    ? { id: row.created_by, handle: row.added_by_username || row.added_by_email.split('@')[0] }
+    : null;
+
+/** Join that provides what `addedByOf` reads, for a table aliased `alias`. */
+export const addedByJoin = (alias) =>
+  `LEFT JOIN users cb ON cb.id = ${alias}.created_by`;
+export const ADDED_BY_COLUMNS = 'cb.username AS added_by_username, cb.email AS added_by_email';
+
 export async function findById(id) {
   const { rows } = await query('SELECT * FROM users WHERE id = $1', [id]);
   return rows[0] ?? null;
@@ -58,8 +87,9 @@ export async function findByEmail(email) {
 
 /**
  * `role` defaults to `user`; only trusted callers (admin routes, the admin
- * CLI) pass another. Pass a transaction client as `db` to create atomically
- * with other writes.
+ * CLI) pass another. `createdBy` is the owning sub-admin, or null for the
+ * super-admin. Pass a transaction client as `db` to create atomically with
+ * other writes.
  */
 export async function createUser(
   {
@@ -70,14 +100,15 @@ export async function createUser(
     username = null,
     phone = '',
     role = ROLES.USER,
+    createdBy = null,
   },
   db = pool
 ) {
   const { rows } = await db.query(
-    `INSERT INTO users (email, password_hash, first_name, last_name, username, phone, role)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)
+    `INSERT INTO users (email, password_hash, first_name, last_name, username, phone, role, created_by)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
      RETURNING *`,
-    [normalizeEmail(email), await hashSecret(password), firstName, lastName, username, phone, role]
+    [normalizeEmail(email), await hashSecret(password), firstName, lastName, username, phone, role, createdBy]
   );
   return rows[0];
 }

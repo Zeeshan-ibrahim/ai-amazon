@@ -36,14 +36,17 @@ Then open http://localhost:3000 and sign in.
 | --- | --- | --- | --- |
 | `trader@demo.test` | `password123` | `user` | `/dashboard` — approved deposit, sees 3 assigned orders |
 | `locked@demo.test` | `password123` | `user` | `/dashboard` — deposit still pending, so orders are hidden |
-| `admin@demo.test` | `password123` | `admin` | `/admin` |
+| `admin@demo.test` | `password123` | `super_admin` | `/admin` — everything |
+| `subadmin@demo.test` | `password123` | `sub_admin` | `/admin` — only their own members, plans and products |
+| `nora.ali@demo.test` | `password123` | `user` | `/dashboard` — owned by the sub-admin, sees only their plans |
 
-`npm run db:seed` also adds two more members, a 30-product catalog and four
+`npm run db:seed` also adds more members, a 30-product catalog and four
 placeholder deposit wallets.
 
-Create a real admin with
+Create the first super-admin with
 `npm run db:create-admin -- --email you@example.com --password '...' --username admin`.
-Signup can only ever create `user` accounts.
+Sub-admins are created by a super-admin at `/admin/sub-admins`. Signup can only
+ever create `user` accounts.
 
 ## Environment
 
@@ -75,14 +78,20 @@ NEXT_PUBLIC_API_URL=http://localhost:4000/api
 | `/admin/banners` | Create, edit and delete the banners shown on every member's dashboard |
 | `/admin/account` | My Acc: group overview — members, products, pending requests, total volume, system diagnostics |
 | `/admin/wallets` | Deposit wallets (the only ones traders can pay into), Telegram support link, global withdrawal limit |
+| `/admin/sub-admins` | Super-admin only: sub-admins, what each owns, create / delete |
+| `/admin/balance` | Sub-admin only: their own balance, deposit and withdrawal requests (approved by a super-admin) |
 | `/admin/*` | Other admin sections — placeholders |
 
 ## Roles
 
 Two apps, one login. `user` accounts get the trading app (`/dashboard`,
-`/products`, …); `admin` accounts get `/admin`. Each side redirects the other
-role to its own home, and the API enforces the same split — admins get `403`
-on trader endpoints and vice versa.
+`/products`, …); `super_admin` and `sub_admin` accounts get `/admin`. Each side
+redirects the other role to its own home, and the API enforces the same split —
+admins get `403` on trader endpoints and vice versa.
+
+A super-admin sees everything. A sub-admin sees only the members, plans and
+products they created (plus the shared catalog), and a member only sees their
+owner's plans. The full rules are in [docs/roles.md](docs/roles.md).
 
 ## Current state
 

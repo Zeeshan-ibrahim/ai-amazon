@@ -17,7 +17,7 @@ every request, so a role change or suspension applies immediately.
 | --- | --- | --- |
 | Auth | anyone | — |
 | Account | any signed-in role | `401` |
-| Admin (`/admin/*`) | `role = admin` | `401` / `403` |
+| Admin (`/admin/*`) | `role = super_admin` or `sub_admin` | `401` / `403` |
 | Everything else | `role = user` | `401` / `403` |
 
 A suspended account gets `403` everywhere, including login.
@@ -31,8 +31,9 @@ A suspended account gets `403` everywhere, including login.
 | POST | `/auth/logout` | — | `{ message }`, clears the cookie |
 | POST | `/auth/forgot-password` | `email` | `{ message }` (no email is sent yet) |
 
-Signup always creates `role = user`; a `role` in the body is ignored. Admins
-are created with `npm run db:create-admin`.
+Signup always creates `role = user`; a `role` in the body is ignored. The
+first super-admin is created with `npm run db:create-admin`; sub-admins are
+created by a super-admin (`POST /admin/sub-admins`).
 
 ## Account
 
@@ -58,20 +59,35 @@ loginEmail, phone, avatar, language, balance, doubleLedgerPassword, createdAt }`
 
 ## Admin
 
-Mounted at `/admin`, admin only. Every change below writes an `audit_logs`
-row in the same database transaction.
+Mounted at `/admin`, for `super_admin` and `sub_admin`. Every change below
+writes an `audit_logs` row in the same database transaction.
+
+**Scope** ([roles.md](roles.md)). A super-admin sees everything. A sub-admin
+only sees the traders they own (`created_by`), those traders' transactions,
+orders, plan requests and audits, their own plans, and their own products plus
+the shared catalog (products with no owner, read-only for them). Anything
+outside that is `404`, including approving their own balance requests.
+Banners, wallets, settings and sub-admins are super-admin only (`403`); My
+Balance is sub-admin only (`403`).
 
 ### Members
 
 | Method | Path | Notes |
 | --- | --- | --- |
-| GET | `/admin/members` | `?q=&limit=&offset=` → `{ total, items: Member[] }`. `q` matches name, username, emails, invite code |
-| POST | `/admin/members` | `email`, `password` + optional `firstName`, `lastName`, `username`, `phone`, `role`, `withdrawalLimit` → `201 Member` |
+| GET | `/admin/members` | `?q=&addedBy=&limit=&offset=` → `{ total, items: Member[] }`. `q` matches name, username, emails, invite code. `addedBy` (super-admin only): a sub-admin's id, or `super` |
+| POST | `/admin/members` | `email`, `password` + optional `firstName`, `lastName`, `username`, `phone`, `withdrawalLimit`; super-admins also `role`, `ownerId` → `201 Member`. A sub-admin's new member is always a `user` they own |
 | GET | `/admin/members/:id` | `Member` |
-| PATCH | `/admin/members/:id` | Any create field; `email` is the **login** email, `password` resets it. → `{ member, changed: string[] }`. Changing your own role is `400` |
+| PATCH | `/admin/members/:id` | Any create field, plus `status` (`active`/`suspended`) for super-admins; `email` is the **login** email, `password` resets it. → `{ member, changed: string[] }`. `role`/`status`/`ownerId` from a sub-admin, or changing your own role or status, is `400` |
 | GET | `/admin/members/:id/audits` | `AuditEntry[]`, newest first |
 
-`Member` = `User` + `{ inviteCode, withdrawalLimit, lastLoginAt, hasApprovedDeposit }`.
+`Member` = `User` + `{ inviteCode, withdrawalLimit, lastLoginAt, hasApprovedDeposit, addedBy }`.
+`addedBy` is `{ id, handle }` of the owning sub-admin, or `null` (super-admin).
+
+`ownerId` moves a trader to another sub-admin (or `null` → the super-admin);
+their history moves with them. Only `user` accounts have an owner, and it must
+be an active sub-admin. Changing a `sub_admin` to another role hands their
+traders, plans and products back to the super-admin in the same transaction.
+Balances always stay with the account.
 
 ### Ledger
 
@@ -89,7 +105,8 @@ row in the same database transaction.
 | GET | `/admin/transactions` | All members. `?type=deposit\|withdrawal&scope=active\|history&limit=&offset=` → `{ total, pending: { deposit, withdrawal }, items: FinancialRequest[] }`. Active = pending; history = completed or rejected |
 | GET | `/admin/transactions/:id/receipt` | The uploaded receipt image, inline (`nosniff`, `default-src 'none'`) |
 
-`FinancialRequest` = `LedgerEntry` + `member: { id, displayName, email }`.
+`FinancialRequest` = `LedgerEntry` + `member: { id, displayName, email, role }`.
+A super-admin's queue also holds sub-admins' own requests (`member.role = sub_admin`).
 `LedgerEntry` carries `coin`, `network`, `address` (deposit: the company
 wallet paid into; withdrawal: the member's destination) and `hasReceipt`.
 
@@ -104,8 +121,8 @@ wallet paid into; withdrawal: the member's destination) and `hasReceipt`.
 
 | Method | Path | Notes |
 | --- | --- | --- |
-| GET | `/admin/products` | `?limit=&offset=` → `{ total, items: AdminProduct[] }`, active products cheapest first |
-| POST | `/admin/products` | `{ title, price, profitPercentage?, imageUrl?, description? }` → `201` |
+| GET | `/admin/products` | `?limit=&offset=` → `{ total, items: AdminProduct[] }`, active products cheapest first. Each has `addedBy` and `editable` |
+| POST | `/admin/products` | `{ title, price, profitPercentage?, imageUrl?, description? }` → `201`. A super-admin's product joins the shared catalog; a sub-admin's is theirs only |
 | PATCH | `/admin/products/:productId` | Any of the create fields. Open orders keep the price and profit they were assigned with |
 | DELETE | `/admin/products/:productId` | Soft delete (`is_active = false`): gone from the catalog and allocation hub; existing orders are unaffected |
 
@@ -113,8 +130,8 @@ wallet paid into; withdrawal: the member's destination) and `hasReceipt`.
 
 | Method | Path | Notes |
 | --- | --- | --- |
-| GET | `/admin/plans` | `Plan[]`, active plans cheapest first — the same list traders get from `GET /plans` |
-| POST | `/admin/plans` | `{ name, price, tag?, description?, imageUrl? }` → `201`. `price` is in USDT |
+| GET | `/admin/plans` | `AdminPlan[]` (`Plan` + `addedBy`), active plans cheapest first. A sub-admin gets only their own |
+| POST | `/admin/plans` | `{ name, price, tag?, description?, imageUrl? }` → `201`. `price` is in USDT. Shown only to the creator's traders |
 | PATCH | `/admin/plans/:planId` | Any of the create fields. Existing contracts keep the price they were activated at |
 | DELETE | `/admin/plans/:planId` | Soft delete (`is_active = false`): traders can no longer see or activate it; existing contracts are unaffected |
 
@@ -145,11 +162,32 @@ wallet paid into; withdrawal: the member's destination) and `hasReceipt`.
 | GET | `/admin/settings` | `{ telegramSupportUrl, globalWithdrawalLimit, updatedAt }` |
 | PUT | `/admin/settings` | `{ telegramSupportUrl, globalWithdrawalLimit }`, both saved together. The URL must be `http(s)://…` or empty |
 
+### Sub-admins (super-admin only)
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| GET | `/admin/sub-admins` | `SubAdmin[]`, newest first: `User` + `{ inviteCode, lastLoginAt, stats: { members, memberBalance, plans, products, pendingRequests } }` |
+| POST | `/admin/sub-admins` | Same body as `POST /admin/members`; the role is always `sub_admin` → `201 Member` |
+| GET | `/admin/sub-admins/:id` | `{ subAdmin, members: { total, items }, plans, products: { total, items } }` |
+| DELETE | `/admin/sub-admins/:id` | Hands their traders, plans and products to the super-admin, then deletes the account → `{ id, handedBack: { users, plans, products } }`. `409` while they hold a balance or a pending request |
+
+Profile, password, status and role changes go through `PATCH /admin/members/:id`.
+
+### My balance (sub-admin only)
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| GET | `/admin/balance` | `{ balance, transactions: Transaction[], wallets: Wallet[] }` |
+| POST | `/admin/balance/deposits` | Same multipart body as a trader's `POST /deposits` → `201` pending |
+| POST | `/admin/balance/withdrawals` | `{ amount, address }` → `201` pending (USDT TRC20). `400` above the balance |
+
+Both wait for a super-admin in Financials; the balance moves only on approval.
+
 ### Overview
 
 | Method | Path | Notes |
 | --- | --- | --- |
-| GET | `/admin/overview` | `{ members, activeProducts, pendingDeposits, pendingWithdrawals, totalVolume, approvedDeposits, diagnostics, generatedAt }` for My Acc. `members` counts `user` accounts; `totalVolume` is the sum of member balances right now (equal to their approved ledger, so every deposit, withdrawal, adjustment, order and plan moves it); `approvedDeposits` is the all-time deposit total. `diagnostics` = `{ admin: { role, username, email }, database: { connected, latencyMs }, schema: { version, appliedAt } }` |
+| GET | `/admin/overview` | `{ members, activeProducts, pendingDeposits, pendingWithdrawals, totalVolume, approvedDeposits, diagnostics, generatedAt }` for My Acc. `members` counts `user` accounts; for a sub-admin every figure covers only their own traders, and a super-admin's pending counts include sub-admins' own requests. `totalVolume` is the sum of member balances right now (equal to their approved ledger, so every deposit, withdrawal, adjustment, order and plan moves it); `approvedDeposits` is the all-time deposit total. `diagnostics` = `{ admin: { role, username, email }, database: { connected, latencyMs }, schema: { version, appliedAt } }` |
 
 ## Business rules
 
@@ -193,8 +231,8 @@ Balances below come from the signed-in user's row.
 
 | Method | Path | Notes |
 | --- | --- | --- |
-| GET | `/plans` | `{ meta, items: Plan[], contracts: Contract[] }` — `items` is the admin-managed plan list |
-| POST | `/plans/:id/activate` | Debits the price and creates a `PENDING` contract → `201`. `402` with `data: { required, current, missing }` when the balance is short, `409` if this plan already has a pending request, `404` if the plan was removed |
+| GET | `/plans` | `{ meta, items: Plan[], contracts: Contract[] }` — `items` is only the plans of the admin who owns this trader (their sub-admin, or the super-admin) |
+| POST | `/plans/:id/activate` | Debits the price and creates a `PENDING` contract → `201`. `402` with `data: { required, current, missing }` when the balance is short, `409` if this plan already has a pending request, `404` if the plan was removed or belongs to another admin |
 
 ### Ledger
 

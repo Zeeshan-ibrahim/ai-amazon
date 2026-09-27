@@ -48,14 +48,20 @@ export async function listOrdersForUser(userId, { newestFirst = false } = {}) {
   return rows;
 }
 
-/** Copies the product's current price/profit onto a new order. `null` if the product is unavailable. */
-export async function assignOrder(db, { userId, productId, adminId }) {
+/**
+ * Copies the product's current price/profit onto a new order. `null` if the
+ * product is unavailable — or, for a sub-admin (`ownerId`), neither shared
+ * nor their own.
+ */
+export async function assignOrder(db, { userId, productId, adminId, ownerId = null }) {
   const { rows } = await db.query(
     `INSERT INTO orders (user_id, product_id, price, profit_percentage, assigned_by)
      SELECT $1, p.id, p.price, p.profit_percentage, $3
-       FROM products p WHERE p.id = $2 AND p.is_active
+       FROM products p
+      WHERE p.id = $2 AND p.is_active
+        AND ($4::uuid IS NULL OR p.created_by IS NULL OR p.created_by = $4)
      RETURNING *`,
-    [userId, productId, adminId]
+    [userId, productId, adminId, ownerId]
   );
   const order = rows[0] ?? null;
   if (order) {

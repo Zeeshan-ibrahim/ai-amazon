@@ -2,6 +2,8 @@
  * The trader app (dashboard, products, plans, ledger). Mounted behind
  * `requireRole('user')` — admins get a 403 here and use `/api/admin`.
  *
+ * A trader only sees plans from the admin who owns them (docs/roles.md).
+ *
  * Orders, plans, banners, transactions and balances are in Postgres. The
  * rest of the dashboard content is still in-memory demo data.
  */
@@ -17,14 +19,11 @@ import {
   listTransactions,
   toTransaction,
 } from '../models/transactions.js';
-import multer from 'multer';
 import { findById, UUID_PATTERN, verifySecret } from '../models/users.js';
 import { getSettings } from '../models/settings.js';
-import { findActiveWallet, listActiveWallets } from '../models/wallets.js';
-import { discardReceipt, MAX_RECEIPT_BYTES, receiptUpload, saveReceipt, UploadError } from '../uploads.js';
+import { listActiveWallets } from '../models/wallets.js';
+import { parseReceipt, receiveDeposit } from './deposits.js';
 import { fail, ok } from './respond.js';
-
-const MIN_DEPOSIT = 10;
 
 // The withdraw form only takes USDT on TRON today.
 const WITHDRAWAL_COIN = 'USDT';
@@ -128,9 +127,15 @@ router.post('/products/:id/sell', async (req, res) => {
 
 /* ----------------------------------------------------------------- plans */
 
-/** The same live plan list the admin manages, plus this trader's contracts. */
+/**
+ * Only the plans of the admin who owns this trader (their sub-admin, or the
+ * super-admin), plus this trader's contracts.
+ */
 router.get('/plans', async (req, res) => {
-  const [items, contracts] = await Promise.all([listPlans(), listContractsForUser(req.user.id)]);
+  const [items, contracts] = await Promise.all([
+    listPlans({ createdBy: req.userRow.created_by }),
+    listContractsForUser(req.user.id),
+  ]);
   ok(res, {
     meta: { ...db.planMeta, availableBalance: req.user.balance },
     items,
@@ -144,7 +149,7 @@ router.get('/plans', async (req, res) => {
  */
 router.post('/plans/:id/activate', async (req, res) => {
   const plan = UUID_PATTERN.test(req.params.id)
-    ? (await listPlans()).find((p) => p.id === req.params.id)
+    ? (await listPlans({ createdBy: req.userRow.created_by })).find((p) => p.id === req.params.id)
     : null;
   if (!plan) return fail(res, 404, 'This plan is no longer available.');
 
@@ -158,7 +163,7 @@ router.post('/plans/:id/activate', async (req, res) => {
 
   let contract;
   try {
-    contract = await activatePlan({ userId: req.user.id, planId: plan.id });
+    contract = await activatePlan({ userId: req.user.id, planId: plan.id, createdBy: req.userRow.created_by });
   } catch (err) {
     // The balance changed between the check above and the debit.
     if (err instanceof LedgerError) return insufficient((await findById(req.user.id)).balance);
@@ -196,61 +201,11 @@ router.get('/faq', (req, res) => ok(res, db.faq));
 /** Company wallets a trader can pay into (Deposit Center step 2). */
 router.get('/wallets', async (req, res) => ok(res, await listActiveWallets()));
 
-/** Runs the multer parser and turns its errors into 400s. */
-const parseReceipt = (req, res, next) =>
-  receiptUpload(req, res, (err) => {
-    if (!err) return next();
-    if (err instanceof multer.MulterError) {
-      return fail(
-        res,
-        400,
-        err.code === 'LIMIT_FILE_SIZE'
-          ? `Receipt must be ${MAX_RECEIPT_BYTES / 1024 / 1024}MB or smaller.`
-          : 'Upload a single receipt image.'
-      );
-    }
-    next(err);
-  });
-
 /**
  * Multipart: `amount`, `walletId`, `receipt` (JPG/PNG/WEBP, max 5MB).
  * Records a pending deposit; the balance moves only when an admin approves it.
  */
-router.post('/deposits', parseReceipt, async (req, res) => {
-  const { amount, walletId } = req.body ?? {};
-  const value = Math.round(Number(amount) * 100) / 100;
-  if (!(value >= MIN_DEPOSIT)) return fail(res, 400, `Minimum deposit amount is $${MIN_DEPOSIT}.`);
-
-  const wallet = UUID_PATTERN.test(String(walletId)) ? await findActiveWallet(walletId) : null;
-  if (!wallet) return fail(res, 400, 'Choose one of the listed payment wallets.');
-  if (!req.file) return fail(res, 400, 'Upload a screenshot of your payment receipt.');
-
-  let stored;
-  try {
-    stored = await saveReceipt(req.file.buffer);
-  } catch (err) {
-    if (err instanceof UploadError) return fail(res, 400, err.message);
-    throw err;
-  }
-
-  try {
-    const tx = await createRequest({
-      userId: req.user.id,
-      type: 'deposit',
-      amount: value,
-      coin: wallet.coin,
-      network: wallet.network,
-      address: wallet.address,
-      walletId: wallet.id,
-      receiptName: req.file.originalname.slice(0, 255),
-      receiptPath: stored,
-    });
-    ok(res, { ...toTransaction(tx), coin: tx.coin, network: tx.network }, 201);
-  } catch (err) {
-    await discardReceipt(stored);
-    throw err;
-  }
-});
+router.post('/deposits', parseReceipt, receiveDeposit);
 
 /**
  * Records a pending withdrawal, authorized by the withdrawal PIN. Checked against the balance and the

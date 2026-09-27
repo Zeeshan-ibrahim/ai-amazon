@@ -1,6 +1,6 @@
 import { pool, withTransaction } from '../db/pool.js';
 import { AUDIT, recordAudit } from './audit.js';
-import { displayNameOf } from './users.js';
+import { displayNameOf, ownedUserSql } from './users.js';
 
 export class LedgerError extends Error {
   constructor(status, message) {
@@ -51,32 +51,46 @@ export const toLedgerEntry = (row) => ({
   note: row.note,
 });
 
-export async function findTransaction(id) {
-  const { rows } = await pool.query('SELECT * FROM transactions WHERE id = $1', [id]);
+/** A sub-admin (`$1` = their id) only reaches their own users' rows; a super-admin ($1 null) all. */
+const SCOPED = `($1::uuid IS NULL OR ${ownedUserSql('t.user_id', '$1')})`;
+
+/** The row, or null if unknown or outside a sub-admin's (`ownerId`) users. */
+export async function findTransaction(id, { ownerId = null } = {}) {
+  const { rows } = await pool.query(`SELECT * FROM transactions t WHERE t.id = $2 AND ${SCOPED}`, [
+    ownerId,
+    id,
+  ]);
   return rows[0] ?? null;
 }
 
 /**
- * The Financials queue across all members. `scope: 'active'` is pending
- * requests; `'history'` is everything already approved or rejected.
- * Also returns how many of each type are pending, for the tab badges.
+ * The Financials queue. `scope: 'active'` is pending requests; `'history'`
+ * is everything already approved or rejected. Also returns how many of each
+ * type are pending, for the tab badges. `ownerId` limits it to one
+ * sub-admin's users; a super-admin also sees sub-admins' own requests,
+ * marked by `member.role`.
  */
-export async function listRequests({ type, scope, limit, offset }) {
+export async function listRequests({ type, scope, limit, offset, ownerId = null }) {
   const status = scope === 'active' ? "t.status = 'pending'" : "t.status <> 'pending'";
   const order = scope === 'active' ? 't.created_at DESC' : 't.reviewed_at DESC NULLS LAST, t.created_at DESC';
   const [{ rows }, { rows: countRows }, { rows: pendingRows }] = await Promise.all([
     pool.query(
-      `SELECT t.*, u.first_name, u.last_name, u.username, u.email
+      `SELECT t.*, u.first_name, u.last_name, u.username, u.email, u.role AS member_role
          FROM transactions t JOIN users u ON u.id = t.user_id
-        WHERE t.type = $1 AND ${status}
+        WHERE t.type = $2 AND ${status} AND ${SCOPED}
         ORDER BY ${order}
-        LIMIT $2 OFFSET $3`,
-      [type, limit, offset]
+        LIMIT $3 OFFSET $4`,
+      [ownerId, type, limit, offset]
     ),
-    pool.query(`SELECT count(*)::int AS total FROM transactions t WHERE t.type = $1 AND ${status}`, [type]),
     pool.query(
-      `SELECT type, count(*)::int AS n FROM transactions
-        WHERE status = 'pending' AND type IN ('deposit', 'withdrawal') GROUP BY type`
+      `SELECT count(*)::int AS total FROM transactions t WHERE t.type = $2 AND ${status} AND ${SCOPED}`,
+      [ownerId, type]
+    ),
+    pool.query(
+      `SELECT t.type, count(*)::int AS n FROM transactions t
+        WHERE t.status = 'pending' AND t.type IN ('deposit', 'withdrawal') AND ${SCOPED}
+        GROUP BY t.type`,
+      [ownerId]
     ),
   ]);
 
@@ -88,7 +102,7 @@ export async function listRequests({ type, scope, limit, offset }) {
     pending,
     items: rows.map((row) => ({
       ...toLedgerEntry(row),
-      member: { id: row.user_id, displayName: displayNameOf(row), email: row.email },
+      member: { id: row.user_id, displayName: displayNameOf(row), email: row.email, role: row.member_role },
     })),
   };
 }
@@ -193,10 +207,15 @@ export async function recordSettlement(db, { userId, orderId = null, planContrac
   return { transaction: rows[0], balance };
 }
 
-/** Approve or reject a pending deposit/withdrawal. Approval moves the balance. */
-export function reviewTransaction({ transactionId, adminId, approve, note }) {
+/**
+ * Approve or reject a pending deposit/withdrawal. Approval moves the balance.
+ * A sub-admin (`ownerId`) can only review their own users' requests, so
+ * their own requests always go to a super-admin.
+ */
+export function reviewTransaction({ transactionId, adminId, approve, note, ownerId = null }) {
   return withTransaction(async (db) => {
-    const { rows } = await db.query('SELECT * FROM transactions WHERE id = $1 FOR UPDATE', [
+    const { rows } = await db.query(`SELECT * FROM transactions t WHERE t.id = $2 AND ${SCOPED} FOR UPDATE`, [
+      ownerId,
       transactionId,
     ]);
     const tx = rows[0];

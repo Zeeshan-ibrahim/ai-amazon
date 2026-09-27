@@ -1,5 +1,6 @@
 /**
- * The only way to create an admin — signup can't.
+ * The only way to create the first super-admin — signup can't. Sub-admins
+ * are created by a super-admin from the admin portal.
  *
  *   npm run db:create-admin -- --email ops@example.com --password '...' [--username admin]
  */
@@ -25,8 +26,8 @@ if (values.password.length < 8) {
 }
 
 try {
-  const row = await createUser({ ...values, role: ROLES.ADMIN });
-  console.log(`created admin ${row.email} (${row.id})`);
+  const row = await createUser({ ...values, role: ROLES.SUPER_ADMIN });
+  console.log(`created super-admin ${row.email} (${row.id})`);
 } catch (err) {
   console.error(err.code === '23505' ? 'a user with that email or username already exists' : err.message);
   process.exitCode = 1;

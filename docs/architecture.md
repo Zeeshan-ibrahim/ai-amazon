@@ -19,7 +19,7 @@ Browser ──> Next.js (3000) ──fetch──> Express API (4000) ──> Pos
 | `src/routes/index.js` | Access layers — which router sits behind which role check |
 | `src/routes/auth.js` | Public: signup, login, logout |
 | `src/routes/account.js` | Any signed-in role: `/me`, password/PIN, language |
-| `src/routes/admin.js` | `admin` only, mounted at `/api/admin` |
+| `src/routes/admin.js` | `super_admin` or `sub_admin`, mounted at `/api/admin` |
 | `src/routes/user.js` | `user` only: dashboard, products, plans, ledger |
 | `src/middleware/auth.js` | Session cookie, `requireAuth`, `requireRole` |
 | `src/models/users.js` | User queries, hashing, `toPublicUser` |
@@ -27,19 +27,27 @@ Browser ──> Next.js (3000) ──fetch──> Express API (4000) ──> Pos
 
 ### Roles
 
-`users.role` is a Postgres enum: `user` or `admin`. Roles are exclusive — an
-admin is not a superset of a user. The trader app and the admin panel are
-separate products, so `requireRole('user')` guards trader endpoints and
-`requireRole('admin')` guards `/api/admin`. `/me` and friends are the only
-endpoints both roles share.
+`users.role` is a Postgres enum: `user`, `sub_admin` or `super_admin`. Roles
+are exclusive — an admin is not a superset of a user. The trader app and the
+admin panel are separate products, so `requireRole('user')` guards trader
+endpoints and `requireRole('super_admin', 'sub_admin')` guards `/api/admin`.
+`/me` and friends are the only endpoints every role shares.
+
+Inside `/api/admin`, `created_by` on `users`, `plans` and `products` names the
+owning sub-admin (NULL = the super-admin). Every admin query takes
+`ownerIdOf(req)` — the sub-admin's id, or null for a super-admin — so a
+sub-admin only reaches their own records and anything else 404s. Group
+settings and `/admin/sub-admins` are super-admin only; `/admin/balance` is
+sub-admin only. See [roles.md](roles.md).
 
 The session JWT carries only the user id. `requireAuth` loads the row on every
 request, so role changes and suspensions take effect on the next request
 rather than when the token expires.
 
-Only two paths write `role`: signup (always `user`) and the
-`db:create-admin` script. `PATCH /me` whitelists its fields, so a user cannot
-promote themselves or edit their balance.
+Only three paths write `role`: signup (always `user`), the `db:create-admin`
+script (`super_admin`), and super-admin-only admin routes. `PATCH /me`
+whitelists its fields, so a user cannot promote themselves or edit their
+balance.
 
 Every successful response is wrapped in an envelope so the client has one
 shape to unwrap:
@@ -72,7 +80,7 @@ src/
 │       └── settings/         Account hub ("Mine"): menu → profile/, deposits/,
 │                             withdrawals/, security/, help/
 │   └── admin/
-│       ├── layout.tsx        SessionProvider(role="admin") + AdminShell
+│       ├── layout.tsx        SessionProvider(roles=ADMIN_ROLES) + AdminShell
 │       └── [section]/        Placeholder per admin nav item until built
 ├── components/
 │   ├── ui/                   Primitives: Button, Card, Input, Modal, Tabs, Badge, States, Icons

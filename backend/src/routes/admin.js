@@ -1,6 +1,13 @@
 /**
- * Admin panel API. Mounted at `/api/admin` behind `requireRole('admin')`,
- * so every handler here can assume an admin session.
+ * Admin panel API. Mounted at `/api/admin` behind
+ * `requireRole('super_admin', 'sub_admin')`, so every handler here can
+ * assume an admin session.
+ *
+ * Roles (docs/roles.md): a super-admin sees everything. A sub-admin sees
+ * only the traders, plans and products they created (plus the shared
+ * catalog) — every query takes `ownerIdOf(req)`, and anything outside that
+ * 404s. Banners, wallets, settings and the Sub-admins page are
+ * super-admin only; My Balance is sub-admin only.
  *
  * Built: members (list, create, particulars, ledger, orders, audits),
  * financials (the deposit/withdrawal review queue), the product catalog,
@@ -8,9 +15,18 @@
  * overview (My Acc). Still to come: analytics.
  */
 import { Router } from 'express';
-import { withTransaction } from '../db/pool.js';
+import { pool, withTransaction } from '../db/pool.js';
+import { requireRole } from '../middleware/auth.js';
 import { AUDIT, listAuditsForUser, recordAudit } from '../models/audit.js';
-import { getMemberRow, listMembers, toMember, updateMember } from '../models/members.js';
+import {
+  findActiveSubAdmin,
+  getMemberRow,
+  listMembers,
+  releaseOwned,
+  toMember,
+  updateMember,
+} from '../models/members.js';
+import { deleteSubAdmin, getSubAdmin, listSubAdmins } from '../models/subAdmins.js';
 import {
   assignOrder,
   listOrdersForUser,
@@ -23,33 +39,36 @@ import { createBanner, deleteBanner, listBanners, toBanner, updateBanner } from 
 import {
   archivePlan,
   createPlan,
+  findAdminPlan,
+  listAdminPlans,
   listPlanRequests,
-  listPlans,
   reviewPlanRequest,
-  toPlan,
   updatePlan,
 } from '../models/plans.js';
 import {
   archiveProduct,
   createProduct,
+  findAdminProduct,
   listCatalog,
   listProducts,
-  toAdminProduct,
   updateProduct,
 } from '../models/products.js';
 import {
   adjustBalance,
+  createRequest,
   findTransaction,
   LedgerError,
   listRequests,
   listTransactions,
   reviewTransaction,
   toLedgerEntry,
+  toTransaction,
 } from '../models/transactions.js';
 import { getDiagnostics, getOverview } from '../models/overview.js';
 import { getSettings, saveSettings } from '../models/settings.js';
 import { archiveWallet, createWallet, listActiveWallets, toWallet } from '../models/wallets.js';
 import { receiptFile } from '../uploads.js';
+import { parseReceipt, receiveDeposit } from './deposits.js';
 import {
   createUser,
   EMAIL_PATTERN,
@@ -63,6 +82,21 @@ import { fail, ok } from './respond.js';
 const router = Router();
 
 const ROLE_VALUES = Object.values(ROLES);
+
+// Withdrawals go out as USDT on TRON, as for traders.
+const WITHDRAWAL_COIN = 'USDT';
+const WITHDRAWAL_NETWORK = 'TRC20';
+const STATUS_VALUES = ['active', 'suspended'];
+
+/** The sub-admin whose records a request is limited to, or null for a super-admin (everything). */
+const ownerIdOf = (req) => (req.user.role === ROLES.SUB_ADMIN ? req.user.id : null);
+
+const isSuperAdmin = (req) => req.user.role === ROLES.SUPER_ADMIN;
+
+// Group-wide configuration and sub-admin management are super-admin only.
+router.use(['/banners', '/wallets', '/settings', '/sub-admins'], requireRole(ROLES.SUPER_ADMIN));
+// A sub-admin's own balance; a super-admin's balance isn't used.
+router.use('/balance', requireRole(ROLES.SUB_ADMIN));
 
 /** `?limit=&offset=` with sane bounds. */
 const page = (query, defaultLimit) => ({
@@ -78,12 +112,17 @@ const money = (value) => {
 /**
  * Validates member fields shared by create and update. Returns
  * `{ error }` or `{ changes }` with only the fields that were sent.
+ * `role`, `status` and `ownerId` are super-admin only (`canManage`).
  */
-function readMemberInput(body, { creating }) {
+function readMemberInput(body, { creating, canManage }) {
   const changes = {};
   const {
-    firstName, lastName, username, phone, email, role, withdrawalLimit, password,
+    firstName, lastName, username, phone, email, role, status, ownerId, withdrawalLimit, password,
   } = body ?? {};
+
+  if (!canManage && (role !== undefined || status !== undefined || ownerId !== undefined)) {
+    return { error: 'Only a super-admin can change roles, status or owners.' };
+  }
 
   for (const [key, value] of Object.entries({ firstName, lastName, username, phone })) {
     if (value !== undefined) changes[key] = String(value).trim();
@@ -95,6 +134,14 @@ function readMemberInput(body, { creating }) {
   if (role !== undefined) {
     if (!ROLE_VALUES.includes(role)) return { error: 'Unknown role.' };
     changes.role = role;
+  }
+  if (status !== undefined) {
+    if (!STATUS_VALUES.includes(status)) return { error: 'Unknown status.' };
+    changes.status = status;
+  }
+  if (ownerId !== undefined) {
+    if (ownerId !== null && !UUID_PATTERN.test(String(ownerId))) return { error: 'Choose a sub-admin.' };
+    changes.ownerId = ownerId;
   }
   if (withdrawalLimit !== undefined) {
     const limit = money(withdrawalLimit);
@@ -117,24 +164,57 @@ const uniqueViolation = (err) =>
       : 'An account with this email already exists.'
     : null;
 
+/**
+ * Checks `changes.ownerId` against the account's resulting role: only
+ * traders have an owner, and it must be an active sub-admin. Any other role
+ * is always owned by the super-admin (null). Returns an error message or null.
+ */
+async function checkOwner(db, changes, { role, memberId }) {
+  if (role !== ROLES.USER) {
+    if (changes.ownerId) return 'Only user accounts can be assigned to a sub-admin.';
+    changes.ownerId = null;
+    return null;
+  }
+  if (!changes.ownerId) return null;
+  if (changes.ownerId === memberId || !(await findActiveSubAdmin(changes.ownerId, db))) {
+    return 'Choose an active sub-admin.';
+  }
+  return null;
+}
+
 /* ------------------------------------------------------------- members */
 
+/** `?q=&addedBy=<sub-admin id>|super` — `addedBy` is the super-admin's filter. */
 router.get('/members', async (req, res) => {
   const q = String(req.query.q ?? '').trim();
-  ok(res, await listMembers({ q, ...page(req.query, 50) }));
+  const { addedBy } = req.query;
+  let createdBy;
+  if (isSuperAdmin(req) && addedBy) {
+    if (addedBy === 'super') createdBy = null;
+    else if (UUID_PATTERN.test(String(addedBy))) createdBy = addedBy;
+    else return fail(res, 400, 'Unknown filter.');
+  }
+  ok(res, await listMembers({ q, ownerId: ownerIdOf(req), createdBy, ...page(req.query, 50) }));
 });
 
-router.post('/members', async (req, res) => {
-  const { error, changes } = readMemberInput(req.body, { creating: true });
+/** A sub-admin can only create traders, and owns them. */
+async function createMember(req, res, { forceRole } = {}) {
+  const canManage = isSuperAdmin(req);
+  const { error, changes } = readMemberInput(req.body, { creating: true, canManage });
   if (error) return fail(res, 400, error);
+  const role = forceRole ?? (canManage ? changes.role ?? ROLES.USER : ROLES.USER);
 
   try {
     const member = await withTransaction(async (db) => {
+      const ownerError = canManage && (await checkOwner(db, changes, { role }));
+      if (ownerError) throw new LedgerError(400, ownerError);
+
       const row = await createUser(
         {
           ...changes,
           username: changes.username?.trim().replace(/^@/, '') || null,
-          role: changes.role ?? ROLES.USER,
+          role,
+          createdBy: canManage ? changes.ownerId ?? null : req.user.id,
         },
         db
       );
@@ -148,7 +228,7 @@ router.post('/members', async (req, res) => {
         actorId: req.user.id,
         targetUserId: row.id,
         action: AUDIT.MEMBER_CREATED,
-        details: { email: row.email, role: row.role },
+        details: { email: row.email, role: row.role, ...(row.created_by && { ownerId: row.created_by }) },
       });
       return getMemberRow(row.id, db);
     });
@@ -158,11 +238,14 @@ router.post('/members', async (req, res) => {
     if (message) return fail(res, 409, message);
     throw err;
   }
-});
+}
 
-// Every /members/:id route 404s on a malformed or unknown id and gets `req.member`.
+router.post('/members', (req, res) => createMember(req, res));
+
+// Every /members/:id route 404s on a malformed or unknown id — or, for a
+// sub-admin, one that isn't theirs — and gets `req.member`.
 router.param('id', async (req, res, next, id) => {
-  const row = UUID_PATTERN.test(id) ? await getMemberRow(id) : null;
+  const row = UUID_PATTERN.test(id) ? await getMemberRow(id, pool, { ownerId: ownerIdOf(req) }) : null;
   if (!row) return fail(res, 404, 'Member not found.');
   req.member = row;
   next();
@@ -170,17 +253,41 @@ router.param('id', async (req, res, next, id) => {
 
 router.get('/members/:id', (req, res) => ok(res, toMember(req.member)));
 
+/**
+ * Super-admins may also change `role`, `status` and `ownerId` (docs/roles.md,
+ * "Moving records"). A sub-admin who stops being one hands their traders,
+ * plans and products back to the super-admin in the same transaction.
+ */
 router.patch('/members/:id', async (req, res) => {
-  const { error, changes } = readMemberInput(req.body, { creating: false });
+  const { error, changes } = readMemberInput(req.body, { creating: false, canManage: isSuperAdmin(req) });
   if (error) return fail(res, 400, error);
 
   const isSelf = req.member.id === req.user.id;
   if (isSelf && changes.role && changes.role !== req.member.role) {
     return fail(res, 400, "You can't change your own role.");
   }
+  if (isSelf && changes.status && changes.status !== req.member.status) {
+    return fail(res, 400, "You can't change your own status.");
+  }
+
+  const role = changes.role ?? req.member.role;
+  // Leaving the trader role (or sending an owner) settles the owner too.
+  if (role !== ROLES.USER || changes.ownerId !== undefined) {
+    const ownerError = await checkOwner(pool, changes, { role, memberId: req.member.id });
+    if (ownerError) return fail(res, 400, ownerError);
+  }
 
   try {
     const { row, diff } = await withTransaction(async (db) => {
+      if (req.member.role === ROLES.SUB_ADMIN && role !== ROLES.SUB_ADMIN) {
+        const handedBack = await releaseOwned(db, req.member.id);
+        await recordAudit(db, {
+          actorId: req.user.id,
+          targetUserId: req.member.id,
+          action: AUDIT.SUB_ADMIN_RELEASED,
+          details: { handedBack, newRole: role },
+        });
+      }
       const result = await updateMember(db, req.member.id, req.member, changes);
       if (Object.keys(result.diff).length) {
         await recordAudit(db, {
@@ -233,6 +340,7 @@ const review = (approve) => async (req, res) => {
     adminId: req.user.id,
     approve,
     note: String(req.body?.note ?? '').trim(),
+    ownerId: ownerIdOf(req),
   });
   ok(res, toLedgerEntry(tx));
 };
@@ -247,13 +355,13 @@ router.get('/transactions', async (req, res) => {
   const { type = 'deposit', scope = 'active' } = req.query;
   if (type !== 'deposit' && type !== 'withdrawal') return fail(res, 400, 'Unknown type.');
   if (scope !== 'active' && scope !== 'history') return fail(res, 400, 'Unknown scope.');
-  ok(res, await listRequests({ type, scope, ...page(req.query, 20) }));
+  ok(res, await listRequests({ type, scope, ownerId: ownerIdOf(req), ...page(req.query, 20) }));
 });
 
 /** The uploaded receipt image, served inline to admins only. */
 router.get('/transactions/:transactionId/receipt', async (req, res) => {
   const tx = UUID_PATTERN.test(req.params.transactionId)
-    ? await findTransaction(req.params.transactionId)
+    ? await findTransaction(req.params.transactionId, { ownerId: ownerIdOf(req) })
     : null;
   if (!tx?.receipt_path) return fail(res, 404, 'Receipt not found.');
 
@@ -290,6 +398,7 @@ router.get('/members/:id/catalog', async (req, res) => {
       q: String(req.query.q ?? '').trim(),
       min,
       max,
+      ownerId: ownerIdOf(req),
       ...page(req.query, 30),
     })
   );
@@ -304,7 +413,7 @@ router.post('/members/:id/orders', async (req, res) => {
 
   try {
     const order = await withTransaction((db) =>
-      assignOrder(db, { userId: req.member.id, productId, adminId: req.user.id })
+      assignOrder(db, { userId: req.member.id, productId, adminId: req.user.id, ownerId: ownerIdOf(req) })
     );
     if (!order) return fail(res, 404, 'Product not found.');
     ok(res, { id: order.id, productId, status: order.status }, 201);
@@ -413,14 +522,17 @@ function readProductInput(body, { creating }) {
   return { changes };
 }
 
+/** A sub-admin sees the shared catalog (read-only) plus their own products. */
 router.get('/products', async (req, res) => {
-  ok(res, await listProducts(page(req.query, 40)));
+  ok(res, await listProducts({ ownerId: ownerIdOf(req), ...page(req.query, 40) }));
 });
 
+/** A super-admin's products join the shared catalog; a sub-admin's are theirs only. */
 router.post('/products', async (req, res) => {
   const { error, changes } = readProductInput(req.body, { creating: true });
   if (error) return fail(res, 400, error);
-  ok(res, toAdminProduct(await createProduct(changes)), 201);
+  const row = await createProduct({ ...changes, createdBy: ownerIdOf(req) });
+  ok(res, await findAdminProduct(row.id, ownerIdOf(req)), 201);
 });
 
 router.patch('/products/:productId', async (req, res) => {
@@ -428,14 +540,15 @@ router.patch('/products/:productId', async (req, res) => {
   const { error, changes } = readProductInput(req.body, { creating: false });
   if (error) return fail(res, 400, error);
 
-  const row = await updateProduct(req.params.productId, changes);
+  const row = await updateProduct(req.params.productId, changes, { ownerId: ownerIdOf(req) });
   if (!row) return fail(res, 404, 'Product not found.');
-  ok(res, toAdminProduct(row));
+  ok(res, await findAdminProduct(row.id, ownerIdOf(req)));
 });
 
 router.delete('/products/:productId', async (req, res) => {
   const found =
-    UUID_PATTERN.test(req.params.productId) && (await archiveProduct(req.params.productId));
+    UUID_PATTERN.test(req.params.productId) &&
+    (await archiveProduct(req.params.productId, { ownerId: ownerIdOf(req) }));
   if (!found) return fail(res, 404, 'Product not found.');
   ok(res, { id: req.params.productId });
 });
@@ -488,12 +601,21 @@ function readPlanInput(body, { creating }) {
   return { changes };
 }
 
-router.get('/plans', async (req, res) => ok(res, await listPlans()));
+/**
+ * A super-admin sees every plan; a sub-admin only their own — the only
+ * plans their traders see.
+ */
+router.get('/plans', async (req, res) => {
+  const ownerId = ownerIdOf(req);
+  ok(res, await listAdminPlans(ownerId ? { createdBy: ownerId } : {}));
+});
 
+/** A super-admin's plans are shown to the traders they own; a sub-admin's to theirs. */
 router.post('/plans', async (req, res) => {
   const { error, changes } = readPlanInput(req.body, { creating: true });
   if (error) return fail(res, 400, error);
-  ok(res, toPlan(await createPlan(changes)), 201);
+  const row = await createPlan({ ...changes, createdBy: ownerIdOf(req) });
+  ok(res, await findAdminPlan(row.id), 201);
 });
 
 router.patch('/plans/:planId', async (req, res) => {
@@ -501,13 +623,15 @@ router.patch('/plans/:planId', async (req, res) => {
   const { error, changes } = readPlanInput(req.body, { creating: false });
   if (error) return fail(res, 400, error);
 
-  const row = await updatePlan(req.params.planId, changes);
+  const row = await updatePlan(req.params.planId, changes, { ownerId: ownerIdOf(req) });
   if (!row) return fail(res, 404, 'Plan not found.');
-  ok(res, toPlan(row));
+  ok(res, await findAdminPlan(row.id));
 });
 
 router.delete('/plans/:planId', async (req, res) => {
-  const found = UUID_PATTERN.test(req.params.planId) && (await archivePlan(req.params.planId));
+  const found =
+    UUID_PATTERN.test(req.params.planId) &&
+    (await archivePlan(req.params.planId, { ownerId: ownerIdOf(req) }));
   if (!found) return fail(res, 404, 'Plan not found.');
   ok(res, { id: req.params.planId });
 });
@@ -518,12 +642,20 @@ router.delete('/plans/:planId', async (req, res) => {
 router.get('/plan-requests', async (req, res) => {
   const { scope = 'active' } = req.query;
   if (scope !== 'active' && scope !== 'history') return fail(res, 400, 'Unknown scope.');
-  ok(res, await listPlanRequests({ scope, ...page(req.query, 20) }));
+  ok(res, await listPlanRequests({ scope, ownerId: ownerIdOf(req), ...page(req.query, 20) }));
 });
 
 const reviewPlan = (approve) => async (req, res) => {
   if (!UUID_PATTERN.test(req.params.contractId)) return fail(res, 404, 'Plan request not found.');
-  ok(res, await reviewPlanRequest({ contractId: req.params.contractId, adminId: req.user.id, approve }));
+  ok(
+    res,
+    await reviewPlanRequest({
+      contractId: req.params.contractId,
+      adminId: req.user.id,
+      approve,
+      ownerId: ownerIdOf(req),
+    })
+  );
 };
 
 router.post('/plan-requests/:contractId/approve', reviewPlan(true));
@@ -642,9 +774,9 @@ router.put('/settings', async (req, res) => {
 
 /* ------------------------------------------------------------ overview */
 
-/** Group totals plus live system checks for the signed-in admin. */
+/** Group totals (a sub-admin's cover only their traders) plus live system checks. */
 router.get('/overview', async (req, res) => {
-  const [stats, diagnostics] = await Promise.all([getOverview(), getDiagnostics()]);
+  const [stats, diagnostics] = await Promise.all([getOverview({ ownerId: ownerIdOf(req) }), getDiagnostics()]);
   ok(res, {
     ...stats,
     diagnostics: {
@@ -653,6 +785,74 @@ router.get('/overview', async (req, res) => {
     },
     generatedAt: new Date().toISOString(),
   });
+});
+
+/* ---------------------------------------------------------- sub-admins */
+
+// Super-admin only (see the guard at the top). Editing a sub-admin's
+// profile, password, status or role goes through PATCH /members/:id.
+
+router.get('/sub-admins', async (req, res) => ok(res, await listSubAdmins()));
+
+router.post('/sub-admins', (req, res) => createMember(req, res, { forceRole: ROLES.SUB_ADMIN }));
+
+/** The sub-admin, their stats, and everything they own. */
+router.get('/sub-admins/:subAdminId', async (req, res) => {
+  const { subAdminId } = req.params;
+  const subAdmin = UUID_PATTERN.test(subAdminId) ? await getSubAdmin(subAdminId) : null;
+  if (!subAdmin) return fail(res, 404, 'Sub-admin not found.');
+
+  const [members, plans, products] = await Promise.all([
+    listMembers({ createdBy: subAdminId, limit: 100 }),
+    listAdminPlans({ createdBy: subAdminId }),
+    listProducts({ createdBy: subAdminId, limit: 100 }),
+  ]);
+  ok(res, { subAdmin, members, plans, products });
+});
+
+/** Hands their traders, plans and products back to the super-admin, then deletes the account. */
+router.delete('/sub-admins/:subAdminId', async (req, res) => {
+  const { subAdminId } = req.params;
+  const handedBack = UUID_PATTERN.test(subAdminId)
+    ? await deleteSubAdmin({ id: subAdminId, actorId: req.user.id })
+    : null;
+  if (!handedBack) return fail(res, 404, 'Sub-admin not found.');
+  ok(res, { id: subAdminId, handedBack });
+});
+
+/* ---------------------------------------------------------- my balance */
+
+// Sub-admin only (see the guard at the top). Requests wait for a
+// super-admin in Financials; a sub-admin can't review their own.
+
+router.get('/balance', async (req, res) => {
+  const [transactions, wallets] = await Promise.all([
+    listTransactions(req.user.id),
+    listActiveWallets(),
+  ]);
+  ok(res, { balance: req.user.balance, transactions: transactions.map(toTransaction), wallets });
+});
+
+/** Multipart: `amount`, `walletId`, `receipt` — same as a trader's deposit. */
+router.post('/balance/deposits', parseReceipt, receiveDeposit);
+
+/** `{ amount, address }`. Checked against the balance now and again on approval. */
+router.post('/balance/withdrawals', async (req, res) => {
+  const value = money(req.body?.amount);
+  const address = String(req.body?.address ?? '').trim();
+  if (!(value > 0)) return fail(res, 400, 'Enter a valid withdrawal amount.');
+  if (!address) return fail(res, 400, 'Enter a destination wallet address.');
+  if (value > req.user.balance) return fail(res, 400, 'Withdrawal exceeds your available balance.');
+
+  const tx = await createRequest({
+    userId: req.user.id,
+    type: 'withdrawal',
+    amount: value,
+    coin: WITHDRAWAL_COIN,
+    network: WITHDRAWAL_NETWORK,
+    address: address.slice(0, 255),
+  });
+  ok(res, toTransaction(tx), 201);
 });
 
 /* -------------------------------------------------------------- audits */
