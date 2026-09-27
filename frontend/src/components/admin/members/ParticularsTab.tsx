@@ -3,8 +3,9 @@
 import { useState, type FormEvent } from 'react';
 import { useSession } from '@/components/layout/SessionProvider';
 import { AdminButton, AdminCard, AdminInput, AdminSelect, Notice } from '@/components/admin/ui';
+import { handleOf, useSubAdmins } from '@/hooks/useSubAdmins';
 import { api, userMessage } from '@/lib/api';
-import type { Member, Role } from '@/lib/types';
+import type { Member, Role, User } from '@/lib/types';
 
 const FIELD_LABELS: Record<string, string> = {
   firstName: 'first name',
@@ -13,6 +14,8 @@ const FIELD_LABELS: Record<string, string> = {
   phone: 'phone',
   email: 'email',
   role: 'role',
+  status: 'status',
+  ownerId: 'owner',
   withdrawalLimit: 'withdrawal limit',
   password: 'password',
 };
@@ -24,6 +27,9 @@ const formFor = (member: Member) => ({
   phone: member.phone,
   email: member.loginEmail,
   role: member.role,
+  status: member.status,
+  /** '' = owned by the super-admin. */
+  ownerId: member.addedBy?.id ?? '',
   withdrawalLimit: String(member.withdrawalLimit),
   password: '',
 });
@@ -36,6 +42,7 @@ export function ParticularsTab({
   onSaved: (member: Member) => void;
 }) {
   const { user } = useSession();
+  const { isSuperAdmin, subAdmins } = useSubAdmins();
   const isSelf = user?.id === member.id;
   const [form, setForm] = useState(() => formFor(member));
   const [saving, setSaving] = useState(false);
@@ -49,12 +56,17 @@ export function ParticularsTab({
     setSaving(true);
     setResult(null);
     try {
-      const { password, withdrawalLimit, role, ...rest } = form;
+      const { password, withdrawalLimit, role, status, ownerId, ...rest } = form;
       const { member: updated, changed } = await api.admin.updateMember(member.id, {
         ...rest,
-        role: role as Role,
         withdrawalLimit: Number(withdrawalLimit) || 0,
         ...(password && { password }),
+        // Only a super-admin may send these; the API refuses them from a sub-admin.
+        ...(isSuperAdmin && {
+          role: role as Role,
+          status: status as User['status'],
+          ownerId: role === 'user' ? ownerId || null : null,
+        }),
       });
       onSaved(updated);
       setForm(formFor(updated));
@@ -100,17 +112,63 @@ export function ParticularsTab({
           onChange={(e) => set('email')(e.target.value)}
         />
 
+        {isSuperAdmin && (
+          <div className="grid gap-7 sm:grid-cols-2">
+            <AdminSelect
+              label="Administrative role"
+              value={form.role}
+              disabled={isSelf}
+              hint={isSelf ? "You can't change your own role." : undefined}
+              onChange={(e) => set('role')(e.target.value)}
+            >
+              <option value="user">User</option>
+              <option value="sub_admin">Sub-admin</option>
+              <option value="super_admin">Super-admin</option>
+            </AdminSelect>
+            <AdminSelect
+              label="Account status"
+              value={form.status}
+              disabled={isSelf}
+              hint={isSelf ? "You can't change your own status." : 'Suspended accounts cannot sign in.'}
+              onChange={(e) => set('status')(e.target.value)}
+            >
+              <option value="active">Active</option>
+              <option value="suspended">Suspended</option>
+            </AdminSelect>
+            {form.role === 'user' && (
+              <AdminSelect
+                label="Owned by"
+                value={form.ownerId}
+                hint="The member only sees their owner's plans. Their history moves with them."
+                onChange={(e) => set('ownerId')(e.target.value)}
+              >
+                <option value="">Super-admin</option>
+                {subAdmins
+                  .filter((s) => s.id !== member.id && (s.status === 'active' || s.id === form.ownerId))
+                  .map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.displayName} ({handleOf(s)})
+                    </option>
+                  ))}
+              </AdminSelect>
+            )}
+          </div>
+        )}
+
+        {isSuperAdmin && member.role === 'sub_admin' && form.role !== 'sub_admin' && (
+          <Notice tone="warn">
+            Their members, plans and products will be handed back to the super-admin. Their balance stays
+            with the account.
+          </Notice>
+        )}
+        {isSuperAdmin && member.role === 'user' && form.role !== 'user' && (
+          <Notice tone="warn">
+            They lose the member app. Their balance stays with the account; open orders and plans stay in
+            their history.
+          </Notice>
+        )}
+
         <div className="grid gap-7 sm:grid-cols-2">
-          <AdminSelect
-            label="Administrative role"
-            value={form.role}
-            disabled={isSelf}
-            hint={isSelf ? "You can't change your own role." : undefined}
-            onChange={(e) => set('role')(e.target.value)}
-          >
-            <option value="user">User</option>
-            <option value="admin">Admin</option>
-          </AdminSelect>
           <AdminInput
             label="Withdrawal limit (USD)"
             type="number"

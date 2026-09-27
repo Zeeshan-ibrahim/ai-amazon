@@ -1,4 +1,10 @@
-export type Role = 'user' | 'admin';
+/** See docs/roles.md. Both admin roles use the admin portal. */
+export type Role = 'user' | 'sub_admin' | 'super_admin';
+
+export const ADMIN_ROLES: readonly Role[] = ['super_admin', 'sub_admin'];
+
+/** The sub-admin who created a record; null means the super-admin owns it. */
+export type AddedBy = { id: string; handle: string } | null;
 
 export type User = {
   id: string;
@@ -202,6 +208,8 @@ export type Member = User & {
   lastLoginAt: string | null;
   /** Assigned orders are visible to the member only once this is true. */
   hasApprovedDeposit: boolean;
+  /** The sub-admin who owns this account. Only traders can have one. */
+  addedBy: AddedBy;
 };
 
 export type MemberInput = {
@@ -210,7 +218,11 @@ export type MemberInput = {
   username?: string;
   phone?: string;
   email?: string;
+  /** Super-admin only, like `status` and `ownerId`. */
   role?: Role;
+  status?: User['status'];
+  /** The owning sub-admin's id; null hands the account to the super-admin. */
+  ownerId?: string | null;
   withdrawalLimit?: number;
   password?: string;
 };
@@ -234,6 +246,10 @@ export type AdminProduct = {
   price: number;
   /** Return on the entry price, e.g. 2.5 for 2.5%. */
   profitPercentage: number;
+  /** null = the super-admin's shared catalog. */
+  addedBy: AddedBy;
+  /** False for shared products a sub-admin can assign but not change. */
+  editable: boolean;
   createdAt: string;
   updatedAt: string;
 };
@@ -275,7 +291,8 @@ export type LedgerEntry = Transaction & {
 
 /** A deposit/withdrawal in the admin Financials queue. */
 export type FinancialRequest = LedgerEntry & {
-  member: { id: string; displayName: string; email: string };
+  /** `role` is `sub_admin` for a sub-admin's own request (super-admins only see those). */
+  member: { id: string; displayName: string; email: string; role: Role };
 };
 
 export type WalletInput = Omit<Wallet, 'id'>;
@@ -321,4 +338,36 @@ export type AuditEntry = {
   details: Record<string, unknown>;
   createdAt: string;
   actor: { id: string; handle: string; role: Role } | null;
+};
+
+/** A plan on the admin Plans screen. */
+export type AdminPlan = Plan & { addedBy: AddedBy };
+
+/** A row on the super-admin's Sub-admins page. */
+export type SubAdmin = User & {
+  inviteCode: string;
+  lastLoginAt: string | null;
+  stats: {
+    members: number;
+    /** Sum of their members' balances. */
+    memberBalance: number;
+    plans: number;
+    products: number;
+    /** The sub-admin's own deposit/withdrawal requests awaiting a super-admin. */
+    pendingRequests: number;
+  };
+};
+
+export type SubAdminDetail = {
+  subAdmin: SubAdmin;
+  members: Paged<Member>;
+  plans: AdminPlan[];
+  products: Paged<AdminProduct>;
+};
+
+/** A sub-admin's My Balance screen. */
+export type AdminBalance = {
+  balance: number;
+  transactions: Transaction[];
+  wallets: Wallet[];
 };

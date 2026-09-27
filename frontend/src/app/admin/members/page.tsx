@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { AddMemberModal } from '@/components/admin/members/AddMemberModal';
 import {
+  AddedByBadge,
   AdminButton,
   AdminPageHeader,
   AdminSearch,
@@ -15,19 +16,28 @@ import { EditIcon, UserPlusIcon } from '@/components/ui/Icons';
 import { EmptyState, ErrorState, Skeleton } from '@/components/ui/States';
 import { useDebounced } from '@/hooks/useDebounced';
 import { usePagedList } from '@/hooks/usePagedList';
+import { handleOf, useSubAdmins } from '@/hooks/useSubAdmins';
 import { api } from '@/lib/api';
 import { formatCurrency } from '@/lib/format';
 import type { Member } from '@/lib/types';
 
 const COLUMNS = ['Member portrait', 'Administrative role', 'Portfolio value', 'Invitation ID', 'Panel'];
+/** Super-admins also see who owns each account. */
+const SUPER_COLUMNS = ['Member portrait', 'Administrative role', 'Added by', 'Portfolio value', 'Invitation ID', 'Panel'];
 
 export default function MembersPage() {
   const router = useRouter();
+  const { isSuperAdmin, subAdmins } = useSubAdmins();
   const [query, setQuery] = useState('');
+  const [addedBy, setAddedBy] = useState('');
   const [adding, setAdding] = useState(false);
   const q = useDebounced(query.trim());
+  const columns = isSuperAdmin ? SUPER_COLUMNS : COLUMNS;
 
-  const fetchPage = useCallback((offset: number) => api.admin.members({ q, offset }), [q]);
+  const fetchPage = useCallback(
+    (offset: number) => api.admin.members({ q, addedBy: addedBy || undefined, offset }),
+    [q, addedBy]
+  );
   const { items, total, loading, loadingMore, error, hasMore, loadMore, reload } =
     usePagedList<Member>(fetchPage);
 
@@ -35,9 +45,31 @@ export default function MembersPage() {
     <div className="space-y-8">
       <AdminPageHeader
         title="Group management"
-        subtitle="Audit profiles, allocate products, and adjust balances"
+        subtitle={
+          isSuperAdmin
+            ? 'Audit profiles, allocate products, and adjust balances'
+            : 'Your members — audit profiles, allocate products, and adjust balances'
+        }
         actions={
           <>
+            {isSuperAdmin && (
+              <label className="relative block w-full sm:w-[240px]">
+                <span className="sr-only">Added by</span>
+                <select
+                  value={addedBy}
+                  onChange={(e) => setAddedBy(e.target.value)}
+                  className="w-full rounded-2xl border border-black/10 bg-white px-5 py-4 text-[13px] font-bold uppercase tracking-[0.12em] text-ink focus:border-black/40 focus:outline-none focus:ring-4 focus:ring-gold/20"
+                >
+                  <option value="">All owners</option>
+                  <option value="super">Super-admin</option>
+                  {subAdmins.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {handleOf(s)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
             <AdminSearch
               value={query}
               onChange={setQuery}
@@ -63,13 +95,13 @@ export default function MembersPage() {
             <table className="w-full min-w-[880px] text-left">
               <thead>
                 <tr className="border-b-2 border-ink">
-                  {COLUMNS.map((col, i) => (
+                  {columns.map((col, i) => (
                     <th
                       key={col}
                       scope="col"
                       className={
                         'px-6 py-7 text-[12px] font-extrabold uppercase leading-snug tracking-[0.16em] text-ink/80 first:pl-8 last:pr-8 ' +
-                        (i === COLUMNS.length - 1 ? 'text-right' : '')
+                        (i === columns.length - 1 ? 'text-right' : '')
                       }
                     >
                       {col}
@@ -81,12 +113,14 @@ export default function MembersPage() {
                 {loading
                   ? Array.from({ length: 5 }).map((_, i) => (
                       <tr key={i}>
-                        <td colSpan={COLUMNS.length} className="px-8 py-5">
+                        <td colSpan={columns.length} className="px-8 py-5">
                           <Skeleton className="h-14 w-full" />
                         </td>
                       </tr>
                     ))
-                  : items.map((member) => <MemberRow key={member.id} member={member} />)}
+                  : items.map((member) => (
+                      <MemberRow key={member.id} member={member} showOwner={isSuperAdmin} />
+                    ))}
               </tbody>
             </table>
           </div>
@@ -94,7 +128,7 @@ export default function MembersPage() {
           {!loading && items.length === 0 && (
             <EmptyState
               className="m-6 border-black/10"
-              title={q ? `No members match "${q}".` : 'No members yet.'}
+              title={q || addedBy ? 'No members match these filters.' : 'No members yet.'}
             />
           )}
 
@@ -120,7 +154,7 @@ export default function MembersPage() {
   );
 }
 
-function MemberRow({ member }: { member: Member }) {
+function MemberRow({ member, showOwner }: { member: Member; showOwner: boolean }) {
   return (
     <tr className="transition-colors hover:bg-black/[0.015]">
       <td className="py-6 pl-8 pr-6">
@@ -140,6 +174,11 @@ function MemberRow({ member }: { member: Member }) {
       <td className="px-6 py-6">
         <RoleBadge role={member.role} />
       </td>
+      {showOwner && (
+        <td className="px-6 py-6">
+          {member.role === 'user' ? <AddedByBadge addedBy={member.addedBy} /> : <span className="text-subtle">—</span>}
+        </td>
+      )}
       <td className="px-6 py-6 font-mono text-[17px] font-bold text-ink">
         {formatCurrency(member.balance)}
       </td>

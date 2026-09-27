@@ -2,8 +2,11 @@
 
 import { useEffect, useState, type ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
+import { useSession } from '@/components/layout/SessionProvider';
 import { LogoMark, MenuIcon } from '@/components/ui/Icons';
+import { EmptyState } from '@/components/ui/States';
 import { cn } from '@/lib/cn';
+import { adminSectionOf } from '@/lib/nav';
 import { AdminSidebar } from './AdminSidebar';
 
 /**
@@ -12,7 +15,12 @@ import { AdminSidebar } from './AdminSidebar';
  */
 export function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const { user } = useSession();
   const [menuOpen, setMenuOpen] = useState(false);
+  // Sections for the other admin role aren't in the sidebar; a typed URL
+  // lands here instead of on a page whose API calls would all be refused.
+  const section = adminSectionOf(pathname);
+  const allowed = !section?.only || section.only === user?.role;
 
   // Navigating closes the drawer.
   useEffect(() => setMenuOpen(false), [pathname]);
@@ -68,7 +76,17 @@ export function AdminShell({ children }: { children: ReactNode }) {
         </header>
 
         <main className="px-4 pb-16 pt-6 sm:px-6 lg:px-8 lg:pt-8">
-          <div className="mx-auto w-full max-w-[1180px]">{children}</div>
+          <div className="mx-auto w-full max-w-[1180px]">
+            {allowed ? (
+              children
+            ) : (
+              <EmptyState
+                className="mt-10 border-black/10"
+                title="You don't have access to this section."
+                hint="Pick one from the menu."
+              />
+            )}
+          </div>
         </main>
       </div>
     </div>

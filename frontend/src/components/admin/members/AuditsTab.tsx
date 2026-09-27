@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback } from 'react';
-import { AdminCard, PicturesNeeded } from '@/components/admin/ui';
+import { AdminCard, PicturesNeeded, ROLE_LABELS } from '@/components/admin/ui';
 import { EmptyState, ErrorState, LoadingBlock } from '@/components/ui/States';
 import { useApi } from '@/hooks/useApi';
 import { api } from '@/lib/api';
@@ -12,6 +12,7 @@ import type { AuditEntry, Member } from '@/lib/types';
 const ACTION_LABELS: Record<string, string> = {
   'member.created': 'Account created',
   'member.updated': 'Particulars updated',
+  'subadmin.released': 'Records handed back to super-admin',
   'order.assigned': 'Contract assigned',
   'order.purchased': 'Order purchased',
   'order.sold': 'Order sold',
@@ -31,6 +32,7 @@ const FIELD_LABELS: Record<string, string> = {
   firstName: 'first name',
   lastName: 'last name',
   withdrawalLimit: 'withdrawal limit',
+  ownerId: 'owner',
 };
 
 const show = (value: unknown) =>
@@ -48,6 +50,10 @@ function describe({ action, details: d }: AuditEntry): string | null {
     }
     case 'member.created':
       return `${show(d.email)} as ${show(d.role)}`;
+    case 'subadmin.released': {
+      const n = (d.handedBack ?? {}) as Record<string, number>;
+      return `${n.users ?? 0} members · ${n.plans ?? 0} plans · ${n.products ?? 0} products · now ${show(d.newRole)}`;
+    }
     case 'order.assigned':
       return `Price ${money(d.price)}`;
     case 'order.purchased':
@@ -115,7 +121,7 @@ export function AuditsTab({ member }: { member: Member }) {
                   </div>
                   <p className="mt-0.5 text-[12px] font-bold uppercase tracking-[0.12em] text-subtle">
                     by {entry.actor ? `@${entry.actor.handle}` : 'deleted user'}
-                    {entry.actor?.role === 'admin' && ' · admin'}
+                    {entry.actor && entry.actor.role !== 'user' && ` · ${ROLE_LABELS[entry.actor.role]}`}
                   </p>
                   {line && <p className="mt-1.5 break-words text-[13px] text-muted">{line}</p>}
                 </li>

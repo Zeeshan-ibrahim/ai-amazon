@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from 'react';
 import { AdminButton, AdminInput, AdminSelect, Notice, PicturesNeeded } from '@/components/admin/ui';
 import { Modal } from '@/components/ui/Modal';
+import { handleOf, useSubAdmins } from '@/hooks/useSubAdmins';
 import { api, userMessage } from '@/lib/api';
 import type { Member, Role } from '@/lib/types';
 
@@ -13,18 +14,31 @@ const EMPTY = {
   username: '',
   password: '',
   role: 'user' as Role,
+  /** '' = owned by the super-admin. */
+  ownerId: '',
   withdrawalLimit: '0',
 };
 
+/**
+ * `kind="subAdmin"` is the Sub-admins page's form: the role is fixed and
+ * there's no owner or withdrawal limit. For members, a super-admin also
+ * picks the role and owning sub-admin; a sub-admin's new members are
+ * always traders they own.
+ */
 export function AddMemberModal({
   open,
   onClose,
   onCreated,
+  kind = 'member',
 }: {
   open: boolean;
   onClose: () => void;
   onCreated: (member: Member) => void;
+  kind?: 'member' | 'subAdmin';
 }) {
+  const { isSuperAdmin, subAdmins } = useSubAdmins();
+  const forSubAdmin = kind === 'subAdmin';
+  const managesRoles = isSuperAdmin && !forSubAdmin;
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,21 +57,35 @@ export function AddMemberModal({
     setSaving(true);
     setError(null);
     try {
-      const member = await api.admin.createMember({
-        ...form,
-        withdrawalLimit: Number(form.withdrawalLimit) || 0,
-      });
+      const { role, ownerId, withdrawalLimit, ...fields } = form;
+      const member = forSubAdmin
+        ? await api.admin.createSubAdmin(fields)
+        : await api.admin.createMember({
+            ...fields,
+            withdrawalLimit: Number(withdrawalLimit) || 0,
+            ...(managesRoles && { role, ownerId: role === 'user' ? ownerId || null : null }),
+          });
       setForm(EMPTY);
       onCreated(member);
     } catch (err) {
-      setError(userMessage(err, 'Could not create the member.'));
+      setError(userMessage(err, forSubAdmin ? 'Could not create the sub-admin.' : 'Could not create the member.'));
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <Modal open={open} onClose={close} title="Add member" subtitle="Create an account on behalf of a member." size="lg">
+    <Modal
+      open={open}
+      onClose={close}
+      title={forSubAdmin ? 'Add sub-admin' : 'Add member'}
+      subtitle={
+        forSubAdmin
+          ? 'They get the admin portal, limited to the members, plans and products they add.'
+          : 'Create an account on behalf of a member.'
+      }
+      size="lg"
+    >
       <form onSubmit={onSubmit} className="space-y-5" noValidate>
         <PicturesNeeded what="Add member form" />
         <div className="grid gap-5 sm:grid-cols-2">
@@ -76,19 +104,41 @@ export function AddMemberModal({
             value={form.email}
             onChange={(e) => set('email')(e.target.value)}
           />
-          <AdminSelect label="Administrative role" value={form.role} onChange={(e) => set('role')(e.target.value)}>
-            <option value="user">User</option>
-            <option value="admin">Admin</option>
-          </AdminSelect>
-          <AdminInput
-            label="Withdrawal limit (USD)"
-            type="number"
-            min={0}
-            step="0.01"
-            hint="Max per withdrawal. 0 = use the global limit (Wallets & Support)."
-            value={form.withdrawalLimit}
-            onChange={(e) => set('withdrawalLimit')(e.target.value)}
-          />
+          {managesRoles && (
+            <AdminSelect label="Administrative role" value={form.role} onChange={(e) => set('role')(e.target.value)}>
+              <option value="user">User</option>
+              <option value="sub_admin">Sub-admin</option>
+              <option value="super_admin">Super-admin</option>
+            </AdminSelect>
+          )}
+          {managesRoles && form.role === 'user' && (
+            <AdminSelect
+              label="Owned by"
+              value={form.ownerId}
+              hint="The member only sees their owner's plans."
+              onChange={(e) => set('ownerId')(e.target.value)}
+            >
+              <option value="">Super-admin</option>
+              {subAdmins
+                .filter((s) => s.status === 'active')
+                .map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.displayName} ({handleOf(s)})
+                  </option>
+                ))}
+            </AdminSelect>
+          )}
+          {!forSubAdmin && (
+            <AdminInput
+              label="Withdrawal limit (USD)"
+              type="number"
+              min={0}
+              step="0.01"
+              hint="Max per withdrawal. 0 = use the global limit (Wallets & Support)."
+              value={form.withdrawalLimit}
+              onChange={(e) => set('withdrawalLimit')(e.target.value)}
+            />
+          )}
         </div>
         <AdminInput
           label="Login password"
@@ -100,7 +150,7 @@ export function AddMemberModal({
         />
         {error && <Notice tone="error">{error}</Notice>}
         <AdminButton type="submit" size="lg" loading={saving} className="w-full">
-          Create member
+          {forSubAdmin ? 'Create sub-admin' : 'Create member'}
         </AdminButton>
       </form>
     </Modal>

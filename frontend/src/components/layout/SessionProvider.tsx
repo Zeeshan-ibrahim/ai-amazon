@@ -33,17 +33,17 @@ const SessionContext = createContext<SessionValue>({
 
 /**
  * Loads the signed-in user once and shares it across the shell, and gates
- * the whole subtree on `role`: signed-out visitors go to `/login`, and a
- * signed-in person with a different role is sent to their own app. Children
+ * the whole subtree on `roles`: signed-out visitors go to `/login`, and a
+ * signed-in person with another role is sent to their own app. Children
  * only render once the role matches, so pages never flash for the wrong role.
  *
  * This is UX only — the API enforces the same rule on every request.
  */
 export function SessionProvider({
-  role,
+  roles,
   children,
 }: {
-  role: Role;
+  roles: readonly Role[];
   children: ReactNode;
 }) {
   const router = useRouter();
@@ -79,8 +79,8 @@ export function SessionProvider({
   useEffect(() => {
     if (loading || error) return;
     if (!user) router.replace('/login');
-    else if (user.role !== role) router.replace(homeFor(user.role));
-  }, [loading, error, user, role, router]);
+    else if (!roles.includes(user.role)) router.replace(homeFor(user.role));
+  }, [loading, error, user, roles, router]);
 
   const value = useMemo(
     () => ({ user, loading, refresh, setUser, logout }),
@@ -94,7 +94,7 @@ export function SessionProvider({
         <ErrorState message={error} onRetry={refresh} />
       </div>
     );
-  } else if (user?.role !== role) {
+  } else if (!user || !roles.includes(user.role)) {
     content = (
       <div className="flex min-h-screen items-center justify-center">
         <span className="h-6 w-6 animate-spin rounded-full border-2 border-subtle border-t-transparent" />

@@ -2,7 +2,8 @@
 
 import { useCallback, useState, type ReactNode } from 'react';
 import { ProductFormModal } from '@/components/admin/products/ProductFormModal';
-import { AdminButton, AdminPageHeader, Notice } from '@/components/admin/ui';
+import { AddedByBadge, AdminButton, AdminPageHeader, Notice } from '@/components/admin/ui';
+import { useSession } from '@/components/layout/SessionProvider';
 import { BagIcon, EditIcon, PlusIcon, TrashIcon } from '@/components/ui/Icons';
 import { EmptyState, ErrorState, Skeleton } from '@/components/ui/States';
 import { usePagedList } from '@/hooks/usePagedList';
@@ -14,6 +15,8 @@ import type { AdminProduct } from '@/lib/types';
 type Editor = { open: false } | { open: true; product: AdminProduct | null };
 
 export default function ProductsPage() {
+  const { user } = useSession();
+  const isSubAdmin = user?.role === 'sub_admin';
   const fetchPage = useCallback((offset: number) => api.admin.products({ offset }), []);
   const { items, total, loading, loadingMore, error, hasMore, loadMore, reload } =
     usePagedList<AdminProduct>(fetchPage);
@@ -47,7 +50,11 @@ export default function ProductsPage() {
     <div className="space-y-8">
       <AdminPageHeader
         title="Products"
-        subtitle="Manage group investment options"
+        subtitle={
+          isSubAdmin
+            ? 'Your products, plus the shared catalog (read-only)'
+            : 'Manage group investment options'
+        }
         actions={
           <AdminButton
             onClick={() => setEditor({ open: true, product: null })}
@@ -82,6 +89,9 @@ export default function ProductsPage() {
               <ProductCard
                 key={product.id}
                 product={product}
+                ownerLabel={
+                  isSubAdmin ? (product.editable ? 'Yours' : 'Shared') : <AddedByBadge addedBy={product.addedBy} />
+                }
                 deleting={deletingId === product.id}
                 onEdit={() => setEditor({ open: true, product })}
                 onDelete={() => remove(product)}
@@ -120,11 +130,14 @@ const formatReturn = (value: number) => `${Number(value.toFixed(3))}%`;
 
 function ProductCard({
   product,
+  ownerLabel,
   deleting,
   onEdit,
   onDelete,
 }: {
   product: AdminProduct;
+  /** Who owns it: "Yours"/"Shared" for a sub-admin, the owner's badge for a super-admin. */
+  ownerLabel: ReactNode;
   deleting: boolean;
   onEdit: () => void;
   onDelete: () => void;
@@ -149,6 +162,15 @@ function ProductCard({
         <span className="absolute right-4 top-4 rounded-xl bg-[#1c1c1c] px-3 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-gold">
           {formatReturn(product.profitPercentage)} return
         </span>
+        <span className="absolute left-4 top-4">
+          {typeof ownerLabel === 'string' ? (
+            <span className="rounded-full bg-white/90 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-ink">
+              {ownerLabel}
+            </span>
+          ) : (
+            ownerLabel
+          )}
+        </span>
       </div>
 
       <div className="flex flex-1 flex-col p-6 pt-5">
@@ -157,6 +179,11 @@ function ProductCard({
         </h2>
         <p className="mt-1 text-[20px] font-black text-ink">{formatCurrency(product.price)}</p>
 
+        {!product.editable ? (
+          <p className="mt-auto pt-6 text-[11px] font-bold uppercase tracking-[0.14em] text-subtle">
+            Shared catalog · assign it from a member&apos;s Orders tab
+          </p>
+        ) : (
         <div className="mt-auto flex items-center gap-3 pt-6">
           <button
             type="button"
@@ -180,6 +207,7 @@ function ProductCard({
             )}
           </button>
         </div>
+        )}
       </div>
     </article>
   );

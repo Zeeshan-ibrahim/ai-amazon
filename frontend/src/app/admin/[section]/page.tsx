@@ -9,7 +9,7 @@ import { adminNavItems } from '@/lib/nav';
 export const dynamicParams = false;
 
 export const generateStaticParams = () =>
-  adminNavItems.filter((item) => !('built' in item)).map(({ slug }) => ({ section: slug }));
+  adminNavItems.filter((item) => !item.built).map(({ slug }) => ({ section: slug }));
 
 export default async function AdminSectionPage({
   params,
@@ -17,7 +17,7 @@ export default async function AdminSectionPage({
   params: Promise<{ section: string }>;
 }) {
   const { section } = await params;
-  const item = adminNavItems.find((i) => i.slug === section && !('built' in i));
+  const item = adminNavItems.find((i) => i.slug === section && !i.built);
   if (!item) notFound();
 
   return (

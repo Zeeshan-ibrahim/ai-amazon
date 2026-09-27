@@ -7,7 +7,8 @@ import { AuditsTab } from '@/components/admin/members/AuditsTab';
 import { LedgerTab } from '@/components/admin/members/LedgerTab';
 import { OrdersTab } from '@/components/admin/members/OrdersTab';
 import { ParticularsTab } from '@/components/admin/members/ParticularsTab';
-import { MemberInitial, RoleBadge } from '@/components/admin/ui';
+import { AddedByBadge, MemberInitial, RoleBadge } from '@/components/admin/ui';
+import { useSession } from '@/components/layout/SessionProvider';
 import {
   CartIcon,
   ChevronLeftIcon,
@@ -33,6 +34,7 @@ const TABS: { id: TabId; label: string; icon: ComponentType<SVGProps<SVGSVGEleme
 
 export default function MemberPage() {
   const { id } = useParams<{ id: string }>();
+  const { user } = useSession();
   const fetcher = useCallback(() => api.admin.member(id), [id]);
   const { data: member, loading, error, refetch, setData } = useApi<Member>(fetcher);
   const [tab, setTab] = useState<TabId>('particulars');
@@ -61,6 +63,9 @@ export default function MemberPage() {
                 {member.displayName}
               </h1>
               <RoleBadge role={member.role} outlined />
+              {user?.role === 'super_admin' && member.role === 'user' && (
+                <AddedByBadge addedBy={member.addedBy} />
+              )}
             </div>
             <p className="mt-1 text-[12px] font-bold uppercase tracking-[0.14em] text-subtle sm:text-[13px]">
               Audit ref: {member.inviteCode} • Balance: {formatCurrency(member.balance)}

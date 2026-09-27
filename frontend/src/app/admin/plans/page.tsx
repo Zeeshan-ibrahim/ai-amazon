@@ -2,13 +2,14 @@
 
 import { useCallback, useState, type ReactNode } from 'react';
 import { PlanFormModal } from '@/components/admin/plans/PlanFormModal';
-import { AdminButton, AdminPageHeader, Notice } from '@/components/admin/ui';
+import { AddedByBadge, AdminButton, AdminPageHeader, Notice } from '@/components/admin/ui';
+import { useSession } from '@/components/layout/SessionProvider';
 import { EditIcon, PlusIcon, ShieldIcon, TrashIcon } from '@/components/ui/Icons';
 import { EmptyState, ErrorState, Skeleton } from '@/components/ui/States';
 import { useApi } from '@/hooks/useApi';
 import { api, userMessage } from '@/lib/api';
 import { formatCurrency } from '@/lib/format';
-import type { Plan } from '@/lib/types';
+import type { AdminPlan, Plan } from '@/lib/types';
 
 /** Dialog state: closed, adding, or editing a plan. */
 type Editor = { open: false } | { open: true; plan: Plan | null };
@@ -16,7 +17,9 @@ type Editor = { open: false } | { open: true; plan: Plan | null };
 const fetchPlans = () => api.admin.plans();
 
 export default function PlansPage() {
-  const { data, loading, error, refetch } = useApi<Plan[]>(fetchPlans);
+  const { data, loading, error, refetch } = useApi<AdminPlan[]>(fetchPlans);
+  const { user } = useSession();
+  const isSuperAdmin = user?.role === 'super_admin';
 
   const [editor, setEditor] = useState<Editor>({ open: false });
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -49,7 +52,11 @@ export default function PlansPage() {
     <div className="space-y-8">
       <AdminPageHeader
         title="Plans"
-        subtitle="Manage investment tiers and strategic assets"
+        subtitle={
+          isSuperAdmin
+            ? "Manage investment tiers — members see only their owner's plans"
+            : 'Your plans — the only plans your members see'
+        }
         actions={
           <AdminButton
             onClick={() => setEditor({ open: true, plan: null })}
@@ -83,6 +90,7 @@ export default function PlansPage() {
             <PlanCard
               key={plan.id}
               plan={plan}
+              showOwner={isSuperAdmin}
               deleting={deletingId === plan.id}
               onEdit={() => setEditor({ open: true, plan })}
               onDelete={() => remove(plan)}
@@ -110,11 +118,13 @@ function PlanGrid({ children }: { children: ReactNode }) {
 
 function PlanCard({
   plan,
+  showOwner,
   deleting,
   onEdit,
   onDelete,
 }: {
-  plan: Plan;
+  plan: AdminPlan;
+  showOwner: boolean;
   deleting: boolean;
   onEdit: () => void;
   onDelete: () => void;
@@ -136,6 +146,7 @@ function PlanCard({
             <ShieldIcon className="h-16 w-16" />
           </div>
         )}
+        {showOwner && <AddedByBadge addedBy={plan.addedBy} className="absolute left-6 top-6" />}
         {plan.tag && (
           <span className="absolute right-6 top-6 rounded-full bg-gold px-4 py-1.5 text-[11px] font-black uppercase tracking-[0.14em] text-ink shadow-[0_6px_16px_-8px_rgba(0,0,0,0.5)]">
             {plan.tag}

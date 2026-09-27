@@ -5,7 +5,8 @@ import { usePathname } from 'next/navigation';
 import { useSession } from '@/components/layout/SessionProvider';
 import { CloseIcon, LogoMark, LogoutIcon, UserIcon } from '@/components/ui/Icons';
 import { cn } from '@/lib/cn';
-import { adminNavItems } from '@/lib/nav';
+import { adminNavFor } from '@/lib/nav';
+import { ROLE_LABELS } from './ui';
 
 /**
  * Black admin sidebar. Always visible from `lg`; below that it is a drawer
@@ -53,7 +54,7 @@ export function AdminSidebar({
       </div>
 
       <nav className="flex-1 space-y-1.5 overflow-y-auto px-3 py-6">
-        {adminNavItems.map(({ slug, label, icon: Icon }) => {
+        {adminNavFor(user?.role).map(({ slug, label, icon: Icon }) => {
           const href = `/admin/${slug}`;
           const isActive = pathname.startsWith(href);
           return (
@@ -83,7 +84,7 @@ export function AdminSidebar({
           <div className="min-w-0 flex-1">
             <p className="truncate text-[14px] font-semibold">@{handle}</p>
             <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-gold">
-              Sysop mode
+              {user ? ROLE_LABELS[user.role] : ''}
             </p>
           </div>
           <button

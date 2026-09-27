@@ -14,7 +14,7 @@ import {
   type TextareaHTMLAttributes,
 } from 'react';
 import { cn } from '@/lib/cn';
-import type { Role } from '@/lib/types';
+import type { AddedBy, Role } from '@/lib/types';
 
 /* ------------------------------------------------------------- layout */
 
@@ -338,16 +338,55 @@ export function AdminSearch({
 
 /* ---------------------------------------------------------- identity */
 
+export const ROLE_LABELS: Record<Role, string> = {
+  user: 'User',
+  sub_admin: 'Sub-admin',
+  super_admin: 'Super-admin',
+};
+
 export function RoleBadge({ role, outlined }: { role: Role; outlined?: boolean }) {
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-full px-4 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em]',
-        outlined ? 'border border-black/10 bg-white text-ink' : 'bg-black/[0.04] text-subtle',
-        role === 'admin' && 'bg-gold/15 text-[#8a6a1f]'
+        'inline-flex items-center whitespace-nowrap rounded-full px-4 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em]',
+        role === 'super_admin'
+          ? 'bg-gold/15 text-[#8a6a1f]'
+          : role === 'sub_admin'
+            ? 'bg-black text-gold'
+            : outlined
+              ? 'border border-black/10 bg-white text-ink'
+              : 'bg-black/[0.04] text-subtle'
       )}
     >
-      {role}
+      {ROLE_LABELS[role]}
+    </span>
+  );
+}
+
+export function AccountStatusBadge({ status }: { status: 'active' | 'suspended' }) {
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center rounded-full px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.12em]',
+        status === 'active' ? 'bg-money/10 text-money' : 'bg-dangerSoft/10 text-dangerSoft'
+      )}
+    >
+      {status}
+    </span>
+  );
+}
+
+/** Who owns a record: a sub-admin's handle, or the super-admin. */
+export function AddedByBadge({ addedBy, className }: { addedBy: AddedBy; className?: string }) {
+  return (
+    <span
+      className={cn(
+        'inline-flex max-w-full items-center truncate rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em]',
+        addedBy ? 'bg-black/[0.06] text-ink' : 'bg-gold/15 text-[#8a6a1f]',
+        className
+      )}
+    >
+      {addedBy ? `@${addedBy.handle}` : 'Super-admin'}
     </span>
   );
 }

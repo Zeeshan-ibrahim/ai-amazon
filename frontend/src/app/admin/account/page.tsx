@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, type ComponentType, type ReactNode, type SVGProps } from 'react';
-import { AdminPageHeader } from '@/components/admin/ui';
+import { AdminPageHeader, ROLE_LABELS } from '@/components/admin/ui';
 import {
   ArrowDownLeftIcon,
   ArrowUpRightIcon,
@@ -44,7 +44,14 @@ export default function AccountPage() {
 
   return (
     <div className="space-y-8">
-      <AdminPageHeader title="Group overview" subtitle="System strategic performance" />
+      <AdminPageHeader
+        title="Group overview"
+        subtitle={
+          data?.diagnostics.admin.role === 'sub_admin'
+            ? 'Your members only'
+            : 'System strategic performance'
+        }
+      />
 
       {error ? (
         <ErrorState message={error} onRetry={refetch} />
@@ -143,7 +150,7 @@ function Diagnostics({ diagnostics: d }: { diagnostics: AdminOverview['diagnosti
       </h2>
       <div className="mt-6 grid gap-4 md:grid-cols-3">
         <DiagnosticCard label="Admin role" ok>
-          {d.admin.role} · @{d.admin.username || d.admin.email.split('@')[0]}
+          {ROLE_LABELS[d.admin.role]} · @{d.admin.username || d.admin.email.split('@')[0]}
         </DiagnosticCard>
         <DiagnosticCard label="Database connection" ok={d.database.connected}>
           {d.database.connected ? `Connected · ${d.database.latencyMs} ms` : 'Unreachable'}

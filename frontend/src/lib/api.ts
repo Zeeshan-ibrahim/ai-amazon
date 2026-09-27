@@ -1,5 +1,7 @@
 import type {
+  AdminBalance,
   AdminOrder,
+  AdminPlan,
   AdminOverview,
   AdminOrderEdit,
   AdminProduct,
@@ -21,6 +23,8 @@ import type {
   PlansPayload,
   ProductInput,
   Settings,
+  SubAdmin,
+  SubAdminDetail,
   Transaction,
   TransactionType,
   User,
@@ -170,7 +174,8 @@ export const api = {
   admin: {
     overview: () => request<AdminOverview>('/admin/overview'),
 
-    members: (params: { q?: string; offset?: number }) =>
+    /** `addedBy` (super-admin only): a sub-admin's id, or `super` for the super-admin's own. */
+    members: (params: { q?: string; addedBy?: string; offset?: number }) =>
       request<Paged<Member>>(`/admin/members${qs(params)}`),
     createMember: (body: MemberInput) =>
       request<Member>('/admin/members', { method: 'POST', body }),
@@ -203,10 +208,11 @@ export const api = {
     deleteProduct: (productId: string) =>
       request<{ id: string }>(`/admin/products/${productId}`, { method: 'DELETE' }),
 
-    plans: () => request<Plan[]>('/admin/plans'),
-    createPlan: (body: PlanInput) => request<Plan>('/admin/plans', { method: 'POST', body }),
+    /** A sub-admin gets only their own plans. */
+    plans: () => request<AdminPlan[]>('/admin/plans'),
+    createPlan: (body: PlanInput) => request<AdminPlan>('/admin/plans', { method: 'POST', body }),
     updatePlan: (planId: string, body: Partial<PlanInput>) =>
-      request<Plan>(`/admin/plans/${planId}`, { method: 'PATCH', body }),
+      request<AdminPlan>(`/admin/plans/${planId}`, { method: 'PATCH', body }),
     /** Hides it from traders; members' existing contracts are unaffected. */
     deletePlan: (planId: string) =>
       request<{ id: string }>(`/admin/plans/${planId}`, { method: 'DELETE' }),
@@ -265,5 +271,25 @@ export const api = {
       ),
     /** Direct image URL — the session cookie authorizes it. */
     receiptUrl: (transactionId: string) => `${BASE_URL}/admin/transactions/${transactionId}/receipt`,
+
+    /* Super-admin only. Edit a sub-admin (profile, status, role) with `updateMember`. */
+    subAdmins: () => request<SubAdmin[]>('/admin/sub-admins'),
+    createSubAdmin: (body: MemberInput) =>
+      request<Member>('/admin/sub-admins', { method: 'POST', body }),
+    subAdmin: (id: string) => request<SubAdminDetail>(`/admin/sub-admins/${id}`),
+    /** Hands their members, plans and products back to the super-admin. `409` while they hold a balance. */
+    deleteSubAdmin: (id: string) =>
+      request<{ id: string; handedBack: Record<'users' | 'plans' | 'products', number> }>(
+        `/admin/sub-admins/${id}`,
+        { method: 'DELETE' }
+      ),
+
+    /* Sub-admin only. Requests wait for a super-admin's approval. */
+    balance: () => request<AdminBalance>('/admin/balance'),
+    /** Multipart: `amount`, `walletId`, `receipt` (image file). */
+    requestDeposit: (form: FormData) =>
+      request<Transaction>('/admin/balance/deposits', { method: 'POST', body: form }),
+    requestWithdrawal: (body: { amount: number; address: string }) =>
+      request<Transaction>('/admin/balance/withdrawals', { method: 'POST', body }),
   },
 };

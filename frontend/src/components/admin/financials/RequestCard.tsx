@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Notice } from '@/components/admin/ui';
+import { Notice, RoleBadge } from '@/components/admin/ui';
 import {
   ArrowDownLeftIcon,
   ArrowUpRightIcon,
@@ -66,6 +66,14 @@ export function RequestCard({
               • {request.member.email}
             </span>
           </p>
+          {request.member.role === 'sub_admin' && (
+            <p className="mt-2">
+              <RoleBadge role="sub_admin" />
+              <span className="ml-2 text-[12px] font-bold uppercase tracking-[0.12em] text-subtle">
+                Own balance request
+              </span>
+            </p>
+          )}
           <div className="mt-2 flex flex-wrap items-center gap-3">
             <span className="flex items-center gap-1.5 text-[13px] font-bold tracking-[0.1em] text-subtle">
               <ClockIcon className="h-4 w-4" />
