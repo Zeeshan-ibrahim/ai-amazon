@@ -1,67 +1,58 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import { RequestCard } from '@/components/admin/financials/RequestCard';
+import { PlanRequestCard } from '@/components/admin/plan-requests/PlanRequestCard';
 import { AdminButton, Segment } from '@/components/admin/ui';
 import { EmptyState, ErrorState, Skeleton } from '@/components/ui/States';
 import { usePagedList } from '@/hooks/usePagedList';
 import { api } from '@/lib/api';
-import type { FinancialRequest } from '@/lib/types';
+import type { PlanRequest } from '@/lib/types';
 
-type Kind = 'deposit' | 'withdrawal';
 type Scope = 'active' | 'history';
 
-export default function FinancialsPage() {
-  const [kind, setKind] = useState<Kind>('deposit');
+export default function PlanRequestsPage() {
   const [scope, setScope] = useState<Scope>('active');
-  const [pending, setPending] = useState<Record<Kind, number>>({ deposit: 0, withdrawal: 0 });
+  const [pending, setPending] = useState(0);
 
   const fetchPage = useCallback(
     async (offset: number) => {
-      const page = await api.admin.requests({ type: kind, scope, offset });
+      const page = await api.admin.planRequests({ scope, offset });
       setPending(page.pending);
       return page;
     },
-    [kind, scope]
+    [scope]
   );
-  const list = usePagedList<FinancialRequest>(fetchPage);
+  const list = usePagedList<PlanRequest>(fetchPage);
 
   // A reviewed request leaves the Active queue (it's now in History).
   const onReviewed = (id: string) => {
     list.remove((item) => item.id === id);
-    setPending((p) => ({ ...p, [kind]: Math.max(0, p[kind] - 1) }));
+    setPending((p) => Math.max(0, p - 1));
   };
-
-  const noun = kind === 'deposit' ? 'deposit' : 'withdrawal';
 
   return (
     <div className="space-y-8">
       <header className="flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
         <div>
           <h1 className="text-[32px] font-black uppercase leading-none tracking-tight text-ink sm:text-[40px]">
-            Requests
+            Plan requests
           </h1>
           <p className="mt-3 max-w-xs text-[12px] font-bold uppercase leading-relaxed tracking-[0.18em] text-subtle">
-            Review and verify group transactions
+            Review member plan activations
           </p>
         </div>
 
-        <div className="flex flex-col gap-2 rounded-3xl border border-black/[0.05] bg-white p-2 shadow-[0_12px_30px_-24px_rgba(0,0,0,0.4)] sm:flex-row sm:items-center">
-          <div className="flex" role="tablist" aria-label="Request type">
-            {(['deposit', 'withdrawal'] as const).map((k) => (
-              <Segment key={k} active={kind === k} tone="dark" onClick={() => setKind(k)} badge={pending[k]}>
-                {k === 'deposit' ? 'Deposits' : 'Withdrawals'}
-              </Segment>
-            ))}
-          </div>
-          <span aria-hidden className="hidden h-10 w-px bg-black/10 sm:block" />
-          <div className="flex" role="tablist" aria-label="Request status">
-            {(['active', 'history'] as const).map((s) => (
-              <Segment key={s} active={scope === s} tone="gold" onClick={() => setScope(s)}>
-                {s}
-              </Segment>
-            ))}
-          </div>
+        <div
+          className="flex rounded-3xl border border-black/[0.05] bg-white p-2 shadow-[0_12px_30px_-24px_rgba(0,0,0,0.4)]"
+          role="tablist"
+          aria-label="Request status"
+        >
+          <Segment active={scope === 'active'} tone="dark" onClick={() => setScope('active')} badge={pending}>
+            Active
+          </Segment>
+          <Segment active={scope === 'history'} tone="dark" onClick={() => setScope('history')}>
+            History
+          </Segment>
         </div>
       </header>
 
@@ -76,12 +67,12 @@ export default function FinancialsPage() {
       ) : list.items.length === 0 ? (
         <EmptyState
           className="border-black/10 bg-white"
-          title={scope === 'active' ? `No ${noun} requests waiting for review.` : `No reviewed ${noun}s yet.`}
+          title={scope === 'active' ? 'No plan requests waiting for review.' : 'No reviewed plan requests yet.'}
         />
       ) : (
         <div className="space-y-6">
           {list.items.map((request) => (
-            <RequestCard key={request.id} request={request} onReviewed={onReviewed} />
+            <PlanRequestCard key={request.id} request={request} onReviewed={onReviewed} />
           ))}
           {list.hasMore && (
             <div className="text-center">

@@ -32,10 +32,8 @@ role-gated frontend apps. Still open:
 
 Built: **Members** (list, add, particulars, ledger, orders, audits),
 **Financials** (deposit/withdrawal review queue with receipts), **Products**
-(catalog CRUD) and **Plans** (plan CRUD). Still placeholders: analytics,
-plan requests (review of `PENDING` plan contracts — rejecting one should
-refund its `plan_activation` debit),
-banners, wallets (the `wallets` table exists and is seeded; there's no admin
+(catalog CRUD), **Plans** (plan CRUD) and **Plan Requests** (approve, or
+reject and refund). Still placeholders: analytics, banners, wallets (the `wallets` table exists and is seeded; there's no admin
 screen to manage it yet), my account.
 
 Built without reference screenshots — search the frontend for

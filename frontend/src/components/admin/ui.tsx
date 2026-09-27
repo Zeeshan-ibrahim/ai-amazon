@@ -120,6 +120,53 @@ export function AdminButton({
   );
 }
 
+/**
+ * One tab in a pill switcher (Financials, Plan Requests). `dark` is the
+ * black/gold primary filter, `gold` the secondary one; `badge` shows a count.
+ */
+export function Segment({
+  active,
+  tone,
+  badge,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  tone: 'dark' | 'gold';
+  badge?: number;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
+      onClick={onClick}
+      className={cn(
+        'flex flex-1 items-center justify-center gap-2 rounded-2xl px-6 py-3.5 text-[13px] font-extrabold uppercase tracking-[0.16em] transition-colors sm:flex-none sm:px-8',
+        active
+          ? tone === 'dark'
+            ? 'bg-black text-gold shadow-[0_10px_20px_-12px_rgba(0,0,0,0.8)]'
+            : 'bg-gold text-ink shadow-[0_10px_20px_-12px_rgba(217,180,90,0.9)]'
+          : 'text-subtle hover:text-ink'
+      )}
+    >
+      {children}
+      {badge ? (
+        <span
+          className={cn(
+            'min-w-[22px] rounded-full px-1.5 py-0.5 text-[11px] tracking-normal',
+            active ? 'bg-gold text-ink' : 'bg-black text-gold'
+          )}
+        >
+          {badge}
+        </span>
+      ) : null}
+    </button>
+  );
+}
+
 /* ------------------------------------------------------------- fields */
 
 const fieldShape =

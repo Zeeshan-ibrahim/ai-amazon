@@ -170,6 +170,7 @@ const TRANSACTION_TYPES = [
   'order_purchase',
   'order_sale',
   'plan_activation',
+  'plan_refund',
 ];
 
 /** `?type=` narrows to one type (Deposit / Withdrawal Records); `?limit=` caps the count. */

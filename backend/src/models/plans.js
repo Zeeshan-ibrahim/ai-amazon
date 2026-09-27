@@ -1,6 +1,7 @@
 import { pool, withTransaction } from '../db/pool.js';
 import { AUDIT, recordAudit } from './audit.js';
-import { recordSettlement } from './transactions.js';
+import { LedgerError, recordSettlement } from './transactions.js';
+import { displayNameOf } from './users.js';
 
 /** Both apps' view — matches `Plan` in frontend/src/lib/types.ts. */
 export const toPlan = (row) => ({
@@ -136,5 +137,94 @@ export function activatePlan({ userId, planId }) {
 
     const { rows: plan } = await db.query('SELECT name, tag FROM plans WHERE id = $1', [planId]);
     return toContract({ ...contract, ...plan[0] });
+  });
+}
+
+/* -------------------------------------------------------- plan requests */
+
+/** A contract in the admin Plan Requests queue. */
+const toPlanRequest = (row) => ({
+  ...toContract(row),
+  image: row.image_url,
+  reviewedAt: row.reviewed_at,
+  member: { id: row.user_id, displayName: displayNameOf(row), email: row.email },
+});
+
+/**
+ * The Plan Requests queue across all members. `scope: 'active'` is pending
+ * requests, newest first; `'history'` is everything already approved or
+ * rejected, most recently reviewed first. Also returns the pending count.
+ */
+export async function listPlanRequests({ scope, limit, offset }) {
+  const status = scope === 'active' ? "c.status = 'pending'" : "c.status <> 'pending'";
+  const order = scope === 'active' ? 'c.created_at DESC' : 'c.reviewed_at DESC NULLS LAST, c.created_at DESC';
+  const [{ rows }, { rows: countRows }, { rows: pendingRows }] = await Promise.all([
+    pool.query(
+      `SELECT c.*, p.name, p.tag, p.image_url, u.first_name, u.last_name, u.username, u.email
+         FROM plan_contracts c
+         JOIN plans p ON p.id = c.plan_id
+         JOIN users u ON u.id = c.user_id
+        WHERE ${status}
+        ORDER BY ${order}
+        LIMIT $1 OFFSET $2`,
+      [limit, offset]
+    ),
+    pool.query(`SELECT count(*)::int AS total FROM plan_contracts c WHERE ${status}`),
+    pool.query("SELECT count(*)::int AS n FROM plan_contracts WHERE status = 'pending'"),
+  ]);
+  return { total: countRows[0].total, pending: pendingRows[0].n, items: rows.map(toPlanRequest) };
+}
+
+/**
+ * Approves or rejects a pending plan request. The price was debited at
+ * activation, so approval only activates the contract; rejection refunds the
+ * price to the member's balance as a `plan_refund` ledger row. Throws
+ * `LedgerError` for an unknown or already-reviewed request.
+ */
+export function reviewPlanRequest({ contractId, adminId, approve }) {
+  return withTransaction(async (db) => {
+    const { rows } = await db.query(
+      `UPDATE plan_contracts
+          SET status = $2, reviewed_by = $3, reviewed_at = now()
+        WHERE id = $1 AND status = 'pending'
+        RETURNING *`,
+      [contractId, approve ? 'active' : 'rejected', adminId]
+    );
+    const contract = rows[0];
+    if (!contract) {
+      const { rows: existing } = await db.query('SELECT status FROM plan_contracts WHERE id = $1', [contractId]);
+      if (!existing[0]) throw new LedgerError(404, 'Plan request not found.');
+      throw new LedgerError(409, `This request is already ${existing[0].status === 'active' ? 'approved' : existing[0].status}.`);
+    }
+
+    const refund = approve
+      ? null
+      : await recordSettlement(db, {
+          userId: contract.user_id,
+          planContractId: contract.id,
+          type: 'plan_refund',
+          amount: contract.price,
+        });
+    await recordAudit(db, {
+      actorId: adminId,
+      targetUserId: contract.user_id,
+      action: approve ? AUDIT.PLAN_APPROVED : AUDIT.PLAN_REJECTED,
+      details: {
+        contractId: contract.id,
+        planId: contract.plan_id,
+        amount: contract.price,
+        ...(refund && { transactionId: refund.transaction.id, balance: refund.balance }),
+      },
+    });
+
+    const { rows: full } = await db.query(
+      `SELECT c.*, p.name, p.tag, p.image_url, u.first_name, u.last_name, u.username, u.email
+         FROM plan_contracts c
+         JOIN plans p ON p.id = c.plan_id
+         JOIN users u ON u.id = c.user_id
+        WHERE c.id = $1`,
+      [contract.id]
+    );
+    return toPlanRequest(full[0]);
   });
 }

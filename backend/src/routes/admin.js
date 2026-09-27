@@ -3,8 +3,8 @@
  * so every handler here can assume an admin session.
  *
  * Built: members (list, create, particulars, ledger, orders, audits),
- * financials (the deposit/withdrawal review queue), the product catalog and
- * plans. Still to come: analytics, plan requests, banners, wallets.
+ * financials (the deposit/withdrawal review queue), the product catalog,
+ * plans and plan requests. Still to come: analytics, banners, wallets.
  */
 import { Router } from 'express';
 import { withTransaction } from '../db/pool.js';
@@ -18,7 +18,15 @@ import {
   toAdminOrder,
   updateOrderByAdmin,
 } from '../models/orders.js';
-import { archivePlan, createPlan, listPlans, toPlan, updatePlan } from '../models/plans.js';
+import {
+  archivePlan,
+  createPlan,
+  listPlanRequests,
+  listPlans,
+  reviewPlanRequest,
+  toPlan,
+  updatePlan,
+} from '../models/plans.js';
 import {
   archiveProduct,
   createProduct,
@@ -498,6 +506,23 @@ router.delete('/plans/:planId', async (req, res) => {
   if (!found) return fail(res, 404, 'Plan not found.');
   ok(res, { id: req.params.planId });
 });
+
+/* ------------------------------------------------------- plan requests */
+
+/** `?scope=active|history&limit=&offset=` */
+router.get('/plan-requests', async (req, res) => {
+  const { scope = 'active' } = req.query;
+  if (scope !== 'active' && scope !== 'history') return fail(res, 400, 'Unknown scope.');
+  ok(res, await listPlanRequests({ scope, ...page(req.query, 20) }));
+});
+
+const reviewPlan = (approve) => async (req, res) => {
+  if (!UUID_PATTERN.test(req.params.contractId)) return fail(res, 404, 'Plan request not found.');
+  ok(res, await reviewPlanRequest({ contractId: req.params.contractId, adminId: req.user.id, approve }));
+};
+
+router.post('/plan-requests/:contractId/approve', reviewPlan(true));
+router.post('/plan-requests/:contractId/reject', reviewPlan(false));
 
 /* -------------------------------------------------------------- audits */
 

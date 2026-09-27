@@ -71,6 +71,7 @@ NEXT_PUBLIC_API_URL=http://localhost:4000/api
 | `/admin/members/:id` | Particulars, ledger (approve deposits, adjust balance), orders (assign contracts), audits |
 | `/admin/financials` | Deposit and withdrawal requests from all members — approve, reject, view receipt |
 | `/admin/plans` | Create, edit and delete the plans traders see on `/plans` |
+| `/admin/plan-requests` | Plan activations from all members — approve, or reject and refund; history |
 | `/admin/*` | Other admin sections — placeholders |
 
 ## Roles

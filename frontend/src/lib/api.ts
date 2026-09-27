@@ -13,6 +13,7 @@ import type {
   Paged,
   Plan,
   PlanInput,
+  PlanRequest,
   PlansPayload,
   ProductInput,
   Transaction,
@@ -201,6 +202,15 @@ export const api = {
     /** Hides it from traders; members' existing contracts are unaffected. */
     deletePlan: (planId: string) =>
       request<{ id: string }>(`/admin/plans/${planId}`, { method: 'DELETE' }),
+
+    planRequests: (params: { scope: 'active' | 'history'; offset?: number }) =>
+      request<Paged<PlanRequest> & { pending: number }>(`/admin/plan-requests${qs(params)}`),
+    /** Approve activates the contract; reject refunds its price to the member. */
+    reviewPlanRequest: (contractId: string, decision: 'approve' | 'reject') =>
+      request<PlanRequest>(`/admin/plan-requests/${contractId}/${decision}`, {
+        method: 'POST',
+        body: {},
+      }),
 
     catalog: (
       id: string,

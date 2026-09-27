@@ -17,7 +17,11 @@ const TYPE_LABELS: Record<LedgerEntry['type'], string> = {
   order_purchase: 'Order purchase',
   order_sale: 'Order sale',
   plan_activation: 'Plan activation',
+  plan_refund: 'Plan refund',
 };
+
+/** System-made rows whose title names the order or plan behind them. */
+const SETTLEMENT_TYPES: LedgerEntry['type'][] = ['order_purchase', 'order_sale', 'plan_activation', 'plan_refund'];
 
 export function LedgerTab({
   member,
@@ -189,8 +193,7 @@ function EntryRow({ entry, onReviewed }: { entry: LedgerEntry; onReviewed: () =>
     }
   };
 
-  const isSettlement =
-    entry.type === 'order_purchase' || entry.type === 'order_sale' || entry.type === 'plan_activation';
+  const isSettlement = SETTLEMENT_TYPES.includes(entry.type);
   const meta = [
     isSettlement && entry.title,
     [entry.coin, entry.network].filter(Boolean).join(' '),

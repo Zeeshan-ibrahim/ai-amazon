@@ -34,7 +34,7 @@ export const adminNavItems = [
   { slug: 'members', label: 'Members', title: 'Members', icon: UsersIcon, built: true },
   { slug: 'products', label: 'Products', title: 'Products', icon: BagIcon, built: true },
   { slug: 'plans', label: 'Plans', title: 'Plans', icon: ShieldIcon, built: true },
-  { slug: 'plan-requests', label: 'Plan Req', title: 'Plan Requests', icon: SwapIcon },
+  { slug: 'plan-requests', label: 'Plan Req', title: 'Plan Requests', icon: SwapIcon, built: true },
   { slug: 'financials', label: 'Financials', title: 'Financials', icon: SwapIcon, built: true },
   { slug: 'banners', label: 'Banners', title: 'Banners', icon: ImageIcon },
   { slug: 'wallets', label: 'Wallets', title: 'Wallets', icon: WalletIcon },

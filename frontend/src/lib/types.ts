@@ -141,7 +141,8 @@ export type TransactionType =
   | 'adjustment'
   | 'order_purchase'
   | 'order_sale'
-  | 'plan_activation';
+  | 'plan_activation'
+  | 'plan_refund';
 
 export type Transaction = {
   id: string;
@@ -255,6 +256,13 @@ export type LedgerEntry = Transaction & {
 
 /** A deposit/withdrawal in the admin Financials queue. */
 export type FinancialRequest = LedgerEntry & {
+  member: { id: string; displayName: string; email: string };
+};
+
+/** A plan activation in the admin Plan Requests queue. */
+export type PlanRequest = Contract & {
+  image: string | null;
+  reviewedAt: string | null;
   member: { id: string; displayName: string; email: string };
 };
 

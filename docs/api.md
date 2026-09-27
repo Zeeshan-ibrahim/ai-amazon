@@ -118,6 +118,14 @@ wallet paid into; withdrawal: the member's destination) and `hasReceipt`.
 | PATCH | `/admin/plans/:planId` | Any of the create fields. Existing contracts keep the price they were activated at |
 | DELETE | `/admin/plans/:planId` | Soft delete (`is_active = false`): traders can no longer see or activate it; existing contracts are unaffected |
 
+### Plan requests
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| GET | `/admin/plan-requests` | `?scope=active\|history&limit=&offset=` → `{ total, pending, items: PlanRequest[] }`. Active = `PENDING`, newest first; history = `ACTIVE`/`REJECTED`, most recently reviewed first. `pending` feeds the tab badge |
+| POST | `/admin/plan-requests/:contractId/approve` | `PENDING` → `ACTIVE`. No balance change (the price was debited at activation) |
+| POST | `/admin/plan-requests/:contractId/reject` | `PENDING` → `REJECTED` and refunds the price as an approved `plan_refund` credit. `409` if already reviewed |
+
 ## Business rules
 
 - **Assigned orders are hidden until the trader has an approved deposit.**
@@ -133,7 +141,8 @@ wallet paid into; withdrawal: the member's destination) and `hasReceipt`.
 - Activating a plan debits its current price immediately and records a
   `PENDING` contract plus an approved `plan_activation` ledger row linked by
   `plan_contract_id`, all in one transaction. A member can have only one
-  pending contract per plan.
+  pending contract per plan. Admin approval makes it `ACTIVE`; rejection makes
+  it `REJECTED` and refunds the price as a `plan_refund` credit.
 
 ## Trader endpoints (`role = user`)
 
@@ -165,7 +174,7 @@ Balances below come from the signed-in user's row.
 
 | Method | Path | Notes |
 | --- | --- | --- |
-| GET | `/transactions` | The trader's own ledger, newest first. Optional `?limit=5` and `?type=deposit\|withdrawal\|adjustment\|order_purchase\|order_sale\|plan_activation` (`400` otherwise). Each row carries `type`, `coin`, `network`, `address`, `reviewedAt` |
+| GET | `/transactions` | The trader's own ledger, newest first. Optional `?limit=5` and `?type=deposit\|withdrawal\|adjustment\|order_purchase\|order_sale\|plan_activation\|plan_refund` (`400` otherwise). Each row carries `type`, `coin`, `network`, `address`, `reviewedAt` |
 | GET | `/faq` | `{ id, question, answer }[]` for Help & Platform FAQ |
 | GET | `/wallets` | Active company wallets: `{ id, coin, network, address }[]` |
 | POST | `/deposits` | **multipart/form-data**: `amount` (min 10), `walletId`, `receipt` (JPG/PNG/WEBP, max 5MB, checked by file signature) → `201` pending |

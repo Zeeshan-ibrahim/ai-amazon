@@ -18,6 +18,8 @@ const ACTION_LABELS: Record<string, string> = {
   'order.updated': 'Contract edited',
   'order.removed': 'Contract removed',
   'plan.activated': 'Plan activated',
+  'plan.approved': 'Plan request approved',
+  'plan.rejected': 'Plan request rejected',
   'balance.adjusted': 'Balance adjusted',
   'deposit.requested': 'Deposit requested',
   'withdrawal.requested': 'Withdrawal requested',
@@ -51,6 +53,10 @@ function describe({ action, details: d }: AuditEntry): string | null {
     case 'order.purchased':
     case 'plan.activated':
       return `Debited ${money(d.amount)} · new balance ${money(d.balance)}`;
+    case 'plan.approved':
+      return money(d.amount);
+    case 'plan.rejected':
+      return `Refunded ${money(d.amount)} · new balance ${money(d.balance)}`;
     case 'order.sold':
       return `Credited ${money(d.amount)} · new balance ${money(d.balance)}`;
     case 'order.updated': {

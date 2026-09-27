@@ -21,6 +21,7 @@ function titleFor(row) {
   if (row.type === 'order_purchase') return `Order purchase${product(row)}`;
   if (row.type === 'order_sale') return `Order sale${product(row)}`;
   if (row.type === 'plan_activation') return `Plan activation${plan(row)}`;
+  if (row.type === 'plan_refund') return `Plan refund${plan(row)}`;
   return row.direction === 'credit' ? 'Balance credit' : 'Balance debit';
 }
 
@@ -171,13 +172,16 @@ async function applyToBalance(db, userId, direction, amount) {
 }
 
 /**
- * Moves the balance for an order purchase (debit), order sale (credit) or
- * plan activation (debit) and records it as an approved ledger row linked by
- * `orderId` or `planContractId`. Run inside the caller's transaction.
- * Throws `LedgerError` (409) when a debit would overdraw the balance.
+ * Moves the balance for an order purchase (debit), order sale (credit),
+ * plan activation (debit) or plan refund (credit) and records it as an
+ * approved ledger row linked by `orderId` or `planContractId`. Run inside the
+ * caller's transaction. Throws `LedgerError` (409) when a debit would
+ * overdraw the balance.
  */
+const CREDIT_SETTLEMENTS = ['order_sale', 'plan_refund'];
+
 export async function recordSettlement(db, { userId, orderId = null, planContractId = null, type, amount }) {
-  const direction = type === 'order_sale' ? 'credit' : 'debit';
+  const direction = CREDIT_SETTLEMENTS.includes(type) ? 'credit' : 'debit';
   const balance = await applyToBalance(db, userId, direction, amount);
   const { rows } = await db.query(
     `INSERT INTO transactions
