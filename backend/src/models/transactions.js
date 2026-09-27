@@ -13,11 +13,14 @@ const via = (row) => (row.coin ? ` (${[row.coin, row.network].filter(Boolean).jo
 
 const product = (row) => (row.product_title ? `: ${row.product_title}` : '');
 
+const plan = (row) => (row.plan_name ? `: ${row.plan_name}` : '');
+
 function titleFor(row) {
   if (row.type === 'deposit') return `Deposit request${via(row)}`;
   if (row.type === 'withdrawal') return `Withdrawal request${via(row)}`;
   if (row.type === 'order_purchase') return `Order purchase${product(row)}`;
   if (row.type === 'order_sale') return `Order sale${product(row)}`;
+  if (row.type === 'plan_activation') return `Plan activation${plan(row)}`;
   return row.direction === 'credit' ? 'Balance credit' : 'Balance debit';
 }
 
@@ -99,10 +102,12 @@ export async function listTransactions(userId, { limit = 0, type } = {}) {
   const typeFilter = type ? `AND t.type = ${add(type)}` : '';
   const limitClause = limit ? `LIMIT ${add(limit)}` : '';
   const { rows } = await pool.query(
-    `SELECT t.*, p.title AS product_title
+    `SELECT t.*, p.title AS product_title, pl.name AS plan_name
        FROM transactions t
        LEFT JOIN orders o ON o.id = t.order_id
        LEFT JOIN products p ON p.id = o.product_id
+       LEFT JOIN plan_contracts c ON c.id = t.plan_contract_id
+       LEFT JOIN plans pl ON pl.id = c.plan_id
       WHERE t.user_id = $1 ${typeFilter}
       ORDER BY t.created_at DESC ${limitClause}`,
     params
@@ -166,18 +171,20 @@ async function applyToBalance(db, userId, direction, amount) {
 }
 
 /**
- * Moves the balance for an order purchase (debit) or sale (credit) and
- * records it as an approved ledger row. Run inside the order's transaction.
+ * Moves the balance for an order purchase (debit), order sale (credit) or
+ * plan activation (debit) and records it as an approved ledger row linked by
+ * `orderId` or `planContractId`. Run inside the caller's transaction.
  * Throws `LedgerError` (409) when a debit would overdraw the balance.
  */
-export async function recordSettlement(db, { userId, orderId, type, amount }) {
+export async function recordSettlement(db, { userId, orderId = null, planContractId = null, type, amount }) {
   const direction = type === 'order_sale' ? 'credit' : 'debit';
   const balance = await applyToBalance(db, userId, direction, amount);
   const { rows } = await db.query(
-    `INSERT INTO transactions (user_id, order_id, type, direction, amount, status, reviewed_at)
-     VALUES ($1, $2, $3, $4, $5, 'approved', now())
+    `INSERT INTO transactions
+       (user_id, order_id, plan_contract_id, type, direction, amount, status, reviewed_at)
+     VALUES ($1, $2, $3, $4, $5, $6, 'approved', now())
      RETURNING *`,
-    [userId, orderId, type, direction, amount]
+    [userId, orderId, planContractId, type, direction, amount]
   );
   return { transaction: rows[0], balance };
 }

@@ -4,12 +4,16 @@ import type {
   AdminProduct,
   AuditEntry,
   CatalogProduct,
+  Contract,
   FaqItem,
   FinancialRequest,
   LedgerEntry,
   Member,
   MemberInput,
   Paged,
+  Plan,
+  PlanInput,
+  PlansPayload,
   ProductInput,
   Transaction,
   TransactionType,
@@ -139,9 +143,10 @@ export const api = {
   sellProduct: (id: string) =>
     request(`/products/${id}/sell`, { method: 'POST' }),
 
-  plans: () => request('/plans'),
+  plans: () => request<PlansPayload>('/plans'),
+  /** Debits the plan's price; `402` with `{ required, current, missing }` if short. */
   activatePlan: (id: string) =>
-    request(`/plans/${id}/activate`, { method: 'POST' }),
+    request<Contract>(`/plans/${id}/activate`, { method: 'POST' }),
 
   transactions: (params: { limit?: number; type?: TransactionType } = {}) =>
     request<Transaction[]>(`/transactions${qs(params)}`),
@@ -188,6 +193,14 @@ export const api = {
     /** Removes it from the catalog; members' existing orders are unaffected. */
     deleteProduct: (productId: string) =>
       request<{ id: string }>(`/admin/products/${productId}`, { method: 'DELETE' }),
+
+    plans: () => request<Plan[]>('/admin/plans'),
+    createPlan: (body: PlanInput) => request<Plan>('/admin/plans', { method: 'POST', body }),
+    updatePlan: (planId: string, body: Partial<PlanInput>) =>
+      request<Plan>(`/admin/plans/${planId}`, { method: 'PATCH', body }),
+    /** Hides it from traders; members' existing contracts are unaffected. */
+    deletePlan: (planId: string) =>
+      request<{ id: string }>(`/admin/plans/${planId}`, { method: 'DELETE' }),
 
     catalog: (
       id: string,

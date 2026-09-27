@@ -10,7 +10,7 @@ import { api, userMessage } from '@/lib/api';
 import { formatCurrency } from '@/lib/format';
 import type { PlansPayload } from '@/lib/types';
 
-const fetchPlans = () => api.plans() as Promise<PlansPayload>;
+const fetchPlans = () => api.plans();
 
 export default function PlansPage() {
   const fetcher = useCallback(fetchPlans, []);
@@ -18,10 +18,14 @@ export default function PlansPage() {
   const [activatingId, setActivatingId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  if (loading) return <LoadingBlock rows={4} />;
+  if (loading && !data) return <LoadingBlock rows={4} />;
   if (error || !data) {
     return <ErrorState message={error ?? 'Plans unavailable.'} onRetry={refetch} />;
   }
+
+  const pendingPlanIds = new Set(
+    data.contracts.filter((c) => c.status === 'PENDING').map((c) => c.planId)
+  );
 
   const activate = async (id: string) => {
     setActionError(null);
@@ -30,9 +34,10 @@ export default function PlansPage() {
       await api.activatePlan(id);
       await refetch();
     } catch (err) {
-      setActionError(
-        userMessage(err, 'Unable to activate this contract.')
-      );
+      setActionError(userMessage(err, 'Unable to activate this plan.'));
+      // The plan may have been edited or removed by an admin, or the balance
+      // moved — reload so the cards match the server.
+      await refetch();
     } finally {
       setActivatingId(null);
     }
@@ -66,16 +71,25 @@ export default function PlansPage() {
         </p>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 xl:gap-5">
-        {data.items.map((plan) => (
-          <PlanCard
-            key={plan.id}
-            plan={plan}
-            onActivate={() => activate(plan.id)}
-            activating={activatingId === plan.id}
-          />
-        ))}
-      </div>
+      {data.items.length === 0 ? (
+        <EmptyState
+          title="No plans are available right now."
+          hint="Check back soon for new partnership packages."
+        />
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 xl:gap-5">
+          {data.items.map((plan) => (
+            <PlanCard
+              key={plan.id}
+              plan={plan}
+              balance={data.meta.availableBalance}
+              pending={pendingPlanIds.has(plan.id)}
+              onActivate={() => activate(plan.id)}
+              activating={activatingId === plan.id}
+            />
+          ))}
+        </div>
+      )}
 
       <section>
         <SectionTitle>

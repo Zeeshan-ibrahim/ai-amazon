@@ -64,12 +64,13 @@ NEXT_PUBLIC_API_URL=http://localhost:4000/api
 | `/login`, `/signup` | Split hero / form auth screens |
 | `/dashboard` | Balance, stats, tutorial, capabilities, campaigns, top earners |
 | `/products` | Purchase / Sell / Completed order queues with funding checks |
-| `/plans` | Partnership packages and investment contracts |
+| `/plans` | Admin-managed plans — activate one from your balance; your contracts |
 | `/history` | Full transaction ledger |
 | `/settings` | Profile, credentials, language, recent ledger actions |
 | `/admin/members` | Member list, search, add member |
 | `/admin/members/:id` | Particulars, ledger (approve deposits, adjust balance), orders (assign contracts), audits |
 | `/admin/financials` | Deposit and withdrawal requests from all members — approve, reject, view receipt |
+| `/admin/plans` | Create, edit and delete the plans traders see on `/plans` |
 | `/admin/*` | Other admin sections — placeholders |
 
 ## Roles

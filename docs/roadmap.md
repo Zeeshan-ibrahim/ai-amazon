@@ -5,13 +5,12 @@ What is deliberately unfinished, and what each piece will touch.
 ## 1. Database
 
 In Postgres: `users`, `products` (catalog), `orders` (per-member assignments),
-`transactions` (ledger) and `audit_logs`. `backend/src/data/demo.js` is the
+`plans`, `plan_contracts` (plan activations), `transactions` (ledger) and
+`audit_logs`. `backend/src/data/demo.js` is the
 seam for the rest — each export becomes a table:
 
 | Export | Table | Notes |
 | --- | --- | --- |
-| `plans` | `plans` | Static catalog; admin-editable later |
-| `myContracts` | `contracts` | `user_id`, `plan_id`, `status`, accrual dates |
 | `liveDeposits` | derived | A view over recent verified deposits |
 | `depositAssets`, `languages` | config tables | |
 
@@ -31,9 +30,11 @@ role-gated frontend apps. Still open:
 
 ## 3. Admin panel
 
-Built: **Members** (list, add, particulars, ledger, orders, audits) and
-**Financials** (deposit/withdrawal review queue with receipts). Still
-placeholders: analytics, products (catalog CRUD), plans, plan requests,
+Built: **Members** (list, add, particulars, ledger, orders, audits),
+**Financials** (deposit/withdrawal review queue with receipts), **Products**
+(catalog CRUD) and **Plans** (plan CRUD). Still placeholders: analytics,
+plan requests (review of `PENDING` plan contracts — rejecting one should
+refund its `plan_activation` debit),
 banners, wallets (the `wallets` table exists and is seeded; there's no admin
 screen to manage it yet), my account.
 

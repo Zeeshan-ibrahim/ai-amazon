@@ -2,8 +2,8 @@
  * Demo (in-memory) data source.
  *
  * Everything the API serves that has not moved to Postgres yet. Users,
- * balances, products, orders, transactions and deposit wallets already live in
- * Postgres. Each export below will
+ * balances, products, orders, plans, transactions and deposit wallets already
+ * live in Postgres. Each export below will
  * become a table as its rules are defined, so keep the shapes stable — the
  * frontend types mirror them 1:1.
  */
@@ -73,61 +73,6 @@ export const productsMeta = {
   },
 };
 
-export const plans = [
-  {
-    id: 'silver',
-    index: '01',
-    name: 'Silver',
-    partner: 'Amazon Partner',
-    cycleDays: 7,
-    investment: 50,
-    dailyYield: 4,
-    estimatedYield: 2,
-    totalPayout: 52,
-    description:
-      'Entry-level trading package backed by high-demand Amazon consumer products.',
-  },
-  {
-    id: 'gold',
-    index: '02',
-    name: 'Gold',
-    partner: 'Alibaba Partner',
-    cycleDays: 15,
-    investment: 500,
-    dailyYield: 8,
-    estimatedYield: 40,
-    totalPayout: 540,
-    description:
-      'Professional package backed by industrial wholesale logistics via Alibaba.',
-  },
-  {
-    id: 'platinum',
-    index: '03',
-    name: 'Platinum',
-    partner: 'Walmart Partner',
-    cycleDays: 30,
-    investment: 1000,
-    dailyYield: 12,
-    estimatedYield: 120,
-    totalPayout: 1120,
-    description:
-      'Elite investment package leveraging Walmart distribution chains.',
-  },
-  {
-    id: 'diamond',
-    index: '04',
-    name: 'Diamond',
-    partner: 'AliExpress Partner',
-    cycleDays: 60,
-    investment: 5000,
-    dailyYield: 15,
-    estimatedYield: 750,
-    totalPayout: 5750,
-    description:
-      'Ultimate trading portfolio built on worldwide volume express arbitrage.',
-  },
-];
-
 export const planMeta = {
   title: 'Store Logistics Partnership Packages',
   subtitle:
@@ -135,8 +80,6 @@ export const planMeta = {
   guarantee:
     'All committed logistic partnership capitals on "Quick on Amazon" are 100% principal insured under our dynamic retail reserve policy protocols. Yield paybacks are computed dynamically and processed autonomously back to your balance wallet directly following Super Admin auditing.',
 };
-
-export const myContracts = [];
 
 export const languages = [
   { code: 'en', label: 'English' },

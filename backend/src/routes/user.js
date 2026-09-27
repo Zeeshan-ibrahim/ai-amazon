@@ -2,12 +2,13 @@
  * The trader app (dashboard, products, plans, ledger). Mounted behind
  * `requireRole('user')` — admins get a 403 here and use `/api/admin`.
  *
- * Orders, transactions and balances are in Postgres. Dashboard content and
- * plans are still in-memory demo data until their rules are defined.
+ * Orders, plans, transactions and balances are in Postgres. Dashboard
+ * content is still in-memory demo data until its rules are defined.
  */
 import { Router } from 'express';
 import * as db from '../data/demo.js';
 import { listOrdersForUser, purchaseOrder, sellOrder, toTraderOrder } from '../models/orders.js';
+import { activatePlan, listContractsForUser, listPlans } from '../models/plans.js';
 import {
   createRequest,
   hasApprovedDeposit,
@@ -119,37 +120,57 @@ router.post('/products/:id/sell', async (req, res) => {
 
 /* ----------------------------------------------------------------- plans */
 
-router.get('/plans', (req, res) =>
+/** The same live plan list the admin manages, plus this trader's contracts. */
+router.get('/plans', async (req, res) => {
+  const [items, contracts] = await Promise.all([listPlans(), listContractsForUser(req.user.id)]);
   ok(res, {
     meta: { ...db.planMeta, availableBalance: req.user.balance },
-    items: db.plans,
-    contracts: db.myContracts,
-  })
-);
+    items,
+    contracts,
+  });
+});
 
-router.post('/plans/:id/activate', (req, res) => {
-  const plan = db.plans.find((p) => p.id === req.params.id);
-  if (!plan) return fail(res, 404, 'Plan not found.');
+/**
+ * Debits the plan's price and records a `PENDING` contract for admin review.
+ * `402` with `{ required, current, missing }` when the balance is short.
+ */
+router.post('/plans/:id/activate', async (req, res) => {
+  const plan = UUID_PATTERN.test(req.params.id)
+    ? (await listPlans()).find((p) => p.id === req.params.id)
+    : null;
+  if (!plan) return fail(res, 404, 'This plan is no longer available.');
 
-  if (req.user.balance < plan.investment) {
-    return fail(res, 402, 'Insufficient balance to activate this contract.');
+  const insufficient = (current) =>
+    fail(res, 402, 'Insufficient balance to activate this plan.', {
+      required: plan.price,
+      current,
+      missing: +(plan.price - current).toFixed(2),
+    });
+  if (req.user.balance < plan.price) return insufficient(req.user.balance);
+
+  let contract;
+  try {
+    contract = await activatePlan({ userId: req.user.id, planId: plan.id });
+  } catch (err) {
+    // The balance changed between the check above and the debit.
+    if (err instanceof LedgerError) return insufficient((await findById(req.user.id)).balance);
+    if (err.code === '23505') return fail(res, 409, 'You already have a pending request for this plan.');
+    throw err;
   }
-  const contract = {
-    id: `CT-${Date.now()}`,
-    planId: plan.id,
-    planName: plan.name,
-    investment: plan.investment,
-    totalPayout: plan.totalPayout,
-    status: 'PENDING',
-    createdAt: new Date().toISOString(),
-  };
-  db.myContracts.unshift(contract);
-  ok(res, contract);
+  if (!contract) return fail(res, 404, 'This plan is no longer available.');
+  ok(res, contract, 201);
 });
 
 /* --------------------------------------------------------------- ledger */
 
-const TRANSACTION_TYPES = ['deposit', 'withdrawal', 'adjustment', 'order_purchase', 'order_sale'];
+const TRANSACTION_TYPES = [
+  'deposit',
+  'withdrawal',
+  'adjustment',
+  'order_purchase',
+  'order_sale',
+  'plan_activation',
+];
 
 /** `?type=` narrows to one type (Deposit / Withdrawal Records); `?limit=` caps the count. */
 router.get('/transactions', async (req, res) => {

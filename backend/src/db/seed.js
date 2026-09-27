@@ -111,6 +111,29 @@ if (productCount[0].n === 0) {
   console.log(`created ${catalog.length} catalog products`);
 }
 
+/* --------------------------------------------------------------- plans */
+
+// [name, tag, price, description]
+const plans = [
+  ['Silver Package', 'Silver', 500, 'Entry-level investment package with steady returns'],
+  ['Gold Package', 'Gold', 1000, 'Premium investment package with higher returns'],
+  ['Platinum Package', 'Platinum', 3000, 'Elite investment package for serious investors'],
+  ['Diamond Package', 'Diamond', 5000, 'Top-tier investment package with maximum returns'],
+];
+
+const { rows: planCount } = await query('SELECT count(*)::int AS n FROM plans');
+if (planCount[0].n === 0) {
+  for (const [name, tag, price, description] of plans) {
+    await query('INSERT INTO plans (name, tag, price, description) VALUES ($1, $2, $3, $4)', [
+      name,
+      tag,
+      price,
+      description,
+    ]);
+  }
+  console.log(`created ${plans.length} plans`);
+}
+
 /* ------------------------------------------------------------- wallets */
 
 // Placeholder addresses — replace from the admin Wallets section before real use.

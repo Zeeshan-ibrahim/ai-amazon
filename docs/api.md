@@ -109,6 +109,15 @@ wallet paid into; withdrawal: the member's destination) and `hasReceipt`.
 | PATCH | `/admin/products/:productId` | Any of the create fields. Open orders keep the price and profit they were assigned with |
 | DELETE | `/admin/products/:productId` | Soft delete (`is_active = false`): gone from the catalog and allocation hub; existing orders are unaffected |
 
+### Plans
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| GET | `/admin/plans` | `Plan[]`, active plans cheapest first — the same list traders get from `GET /plans` |
+| POST | `/admin/plans` | `{ name, price, tag?, description?, imageUrl? }` → `201`. `price` is in USDT |
+| PATCH | `/admin/plans/:planId` | Any of the create fields. Existing contracts keep the price they were activated at |
+| DELETE | `/admin/plans/:planId` | Soft delete (`is_active = false`): traders can no longer see or activate it; existing contracts are unaffected |
+
 ## Business rules
 
 - **Assigned orders are hidden until the trader has an approved deposit.**
@@ -121,6 +130,10 @@ wallet paid into; withdrawal: the member's destination) and `hasReceipt`.
   Each is recorded as an approved `order_purchase` / `order_sale` ledger row
   linked by `order_id`, committed together with the status change.
 - An order copies the product's price and profit % at assignment time.
+- Activating a plan debits its current price immediately and records a
+  `PENDING` contract plus an approved `plan_activation` ledger row linked by
+  `plan_contract_id`, all in one transaction. A member can have only one
+  pending contract per plan.
 
 ## Trader endpoints (`role = user`)
 
@@ -145,14 +158,14 @@ Balances below come from the signed-in user's row.
 
 | Method | Path | Notes |
 | --- | --- | --- |
-| GET | `/plans` | `{ meta, items, contracts }` |
-| POST | `/plans/:id/activate` | Creates a `PENDING` contract, or `402` if underfunded |
+| GET | `/plans` | `{ meta, items: Plan[], contracts: Contract[] }` — `items` is the admin-managed plan list |
+| POST | `/plans/:id/activate` | Debits the price and creates a `PENDING` contract → `201`. `402` with `data: { required, current, missing }` when the balance is short, `409` if this plan already has a pending request, `404` if the plan was removed |
 
 ### Ledger
 
 | Method | Path | Notes |
 | --- | --- | --- |
-| GET | `/transactions` | The trader's own ledger, newest first. Optional `?limit=5` and `?type=deposit\|withdrawal\|adjustment\|order_purchase\|order_sale` (`400` otherwise). Each row carries `type`, `coin`, `network`, `address`, `reviewedAt` |
+| GET | `/transactions` | The trader's own ledger, newest first. Optional `?limit=5` and `?type=deposit\|withdrawal\|adjustment\|order_purchase\|order_sale\|plan_activation` (`400` otherwise). Each row carries `type`, `coin`, `network`, `address`, `reviewedAt` |
 | GET | `/faq` | `{ id, question, answer }[]` for Help & Platform FAQ |
 | GET | `/wallets` | Active company wallets: `{ id, coin, network, address }[]` |
 | POST | `/deposits` | **multipart/form-data**: `amount` (min 10), `walletId`, `receipt` (JPG/PNG/WEBP, max 5MB, checked by file signature) → `201` pending |

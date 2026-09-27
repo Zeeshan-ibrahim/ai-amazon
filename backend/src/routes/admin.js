@@ -3,8 +3,8 @@
  * so every handler here can assume an admin session.
  *
  * Built: members (list, create, particulars, ledger, orders, audits),
- * financials (the deposit/withdrawal review queue) and the product catalog.
- * Still to come: analytics, plans, plan requests, banners, wallets.
+ * financials (the deposit/withdrawal review queue), the product catalog and
+ * plans. Still to come: analytics, plan requests, banners, wallets.
  */
 import { Router } from 'express';
 import { withTransaction } from '../db/pool.js';
@@ -18,6 +18,7 @@ import {
   toAdminOrder,
   updateOrderByAdmin,
 } from '../models/orders.js';
+import { archivePlan, createPlan, listPlans, toPlan, updatePlan } from '../models/plans.js';
 import {
   archiveProduct,
   createProduct,
@@ -424,6 +425,78 @@ router.delete('/products/:productId', async (req, res) => {
     UUID_PATTERN.test(req.params.productId) && (await archiveProduct(req.params.productId));
   if (!found) return fail(res, 404, 'Product not found.');
   ok(res, { id: req.params.productId });
+});
+
+/* --------------------------------------------------------------- plans */
+
+const MAX_PLAN_NAME_LENGTH = 120;
+const MAX_PLAN_TAG_LENGTH = 40;
+
+/**
+ * Validates the Add/Edit Plan form. Returns `{ error }` or `{ changes }`
+ * with only the fields that were sent; creating requires name and price.
+ */
+function readPlanInput(body, { creating }) {
+  const { name, tag, description, price, imageUrl } = body ?? {};
+  const changes = {};
+
+  if (name !== undefined || creating) {
+    changes.name = String(name ?? '').trim();
+    if (!changes.name) return { error: 'Enter a plan name.' };
+    if (changes.name.length > MAX_PLAN_NAME_LENGTH) {
+      return { error: `Keep the plan name under ${MAX_PLAN_NAME_LENGTH} characters.` };
+    }
+  }
+  if (tag !== undefined || creating) {
+    changes.tag = String(tag ?? '').trim();
+    if (changes.tag.length > MAX_PLAN_TAG_LENGTH) {
+      return { error: `Keep the plan tag under ${MAX_PLAN_TAG_LENGTH} characters.` };
+    }
+  }
+  if (price !== undefined || creating) {
+    changes.price = money(price);
+    if (!(changes.price > 0 && changes.price <= MAX_PRICE)) {
+      return { error: 'Enter a price greater than 0 USDT.' };
+    }
+  }
+  if (imageUrl !== undefined || creating) {
+    const url = String(imageUrl ?? '').trim();
+    if (url && !/^https?:\/\/\S+$/i.test(url)) {
+      return { error: 'Image URL must start with http:// or https://.' };
+    }
+    changes.imageUrl = url || null;
+  }
+  if (description !== undefined || creating) {
+    changes.description = String(description ?? '').trim();
+    if (changes.description.length > MAX_DESCRIPTION_LENGTH) {
+      return { error: `Keep the description under ${MAX_DESCRIPTION_LENGTH} characters.` };
+    }
+  }
+  return { changes };
+}
+
+router.get('/plans', async (req, res) => ok(res, await listPlans()));
+
+router.post('/plans', async (req, res) => {
+  const { error, changes } = readPlanInput(req.body, { creating: true });
+  if (error) return fail(res, 400, error);
+  ok(res, toPlan(await createPlan(changes)), 201);
+});
+
+router.patch('/plans/:planId', async (req, res) => {
+  if (!UUID_PATTERN.test(req.params.planId)) return fail(res, 404, 'Plan not found.');
+  const { error, changes } = readPlanInput(req.body, { creating: false });
+  if (error) return fail(res, 400, error);
+
+  const row = await updatePlan(req.params.planId, changes);
+  if (!row) return fail(res, 404, 'Plan not found.');
+  ok(res, toPlan(row));
+});
+
+router.delete('/plans/:planId', async (req, res) => {
+  const found = UUID_PATTERN.test(req.params.planId) && (await archivePlan(req.params.planId));
+  if (!found) return fail(res, 404, 'Plan not found.');
+  ok(res, { id: req.params.planId });
 });
 
 /* -------------------------------------------------------------- audits */

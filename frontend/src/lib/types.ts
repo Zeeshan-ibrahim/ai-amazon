@@ -89,26 +89,38 @@ export type ProductsPayload = {
   counts: Record<ProductTab, number>;
 };
 
+/** A plan as both apps see it — admins manage it, traders activate it. */
 export type Plan = {
   id: string;
-  index: string;
   name: string;
-  partner: string;
-  cycleDays: number;
-  investment: number;
-  dailyYield: number;
-  estimatedYield: number;
-  totalPayout: number;
+  /** Short label shown as a badge, e.g. "Gold". */
+  tag: string;
   description: string;
+  /** In USDT. */
+  price: number;
+  image: string | null;
+  createdAt: string;
+  updatedAt: string;
 };
 
+export type PlanInput = {
+  name: string;
+  tag: string;
+  description: string;
+  price: number;
+  imageUrl: string;
+};
+
+export type ContractStatus = 'PENDING' | 'ACTIVE' | 'REJECTED';
+
+/** A trader's activation of a plan. `price` is what was debited. */
 export type Contract = {
   id: string;
   planId: string;
   planName: string;
-  investment: number;
-  totalPayout: number;
-  status: string;
+  tag: string;
+  price: number;
+  status: ContractStatus;
   createdAt: string;
 };
 
@@ -128,7 +140,8 @@ export type TransactionType =
   | 'withdrawal'
   | 'adjustment'
   | 'order_purchase'
-  | 'order_sale';
+  | 'order_sale'
+  | 'plan_activation';
 
 export type Transaction = {
   id: string;
