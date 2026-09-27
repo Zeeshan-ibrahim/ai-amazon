@@ -5,7 +5,7 @@ What is deliberately unfinished, and what each piece will touch.
 ## 1. Database
 
 In Postgres: `users`, `products` (catalog), `orders` (per-member assignments),
-`plans`, `plan_contracts` (plan activations), `banners`, `transactions` (ledger) and
+`plans`, `plan_contracts` (plan activations), `banners`, `wallets`, `settings`, `transactions` (ledger) and
 `audit_logs`. `backend/src/data/demo.js` is the
 seam for the rest — each export becomes a table:
 
@@ -33,8 +33,8 @@ role-gated frontend apps. Still open:
 Built: **Members** (list, add, particulars, ledger, orders, audits),
 **Financials** (deposit/withdrawal review queue with receipts), **Products**
 (catalog CRUD), **Plans** (plan CRUD), **Plan Requests** (approve, or
-reject and refund) and **Banners**. Still placeholders: analytics, wallets (the `wallets` table exists and is seeded; there's no admin
-screen to manage it yet), my account.
+reject and refund), **Banners** and **Wallets & Support**. Still
+placeholders: analytics, my account.
 
 Built without reference screenshots — search the frontend for
 `PicturesNeeded` to find them: the member **Ledger** and **Audits** tabs and

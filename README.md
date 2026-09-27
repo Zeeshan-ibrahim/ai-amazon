@@ -51,7 +51,6 @@ Signup can only ever create `user` accounts.
 
 ```
 NEXT_PUBLIC_API_URL=http://localhost:4000/api
-NEXT_PUBLIC_TELEGRAM_SUPPORT=     # optional: support username; banners link to this chat
 ```
 
 `backend/.env` — see `backend/.env.example`: `DATABASE_URL`, `JWT_SECRET`,
@@ -74,6 +73,7 @@ NEXT_PUBLIC_TELEGRAM_SUPPORT=     # optional: support username; banners link to 
 | `/admin/plans` | Create, edit and delete the plans traders see on `/plans` |
 | `/admin/plan-requests` | Plan activations from all members — approve, or reject and refund; history |
 | `/admin/banners` | Create, edit and delete the banners shown on every member's dashboard |
+| `/admin/wallets` | Deposit wallets (the only ones traders can pay into), Telegram support link, global withdrawal limit |
 | `/admin/*` | Other admin sections — placeholders |
 
 ## Roles

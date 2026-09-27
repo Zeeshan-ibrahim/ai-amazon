@@ -116,7 +116,7 @@ export function ParticularsTab({
             type="number"
             min={0}
             step="0.01"
-            hint="Max per withdrawal. 0 = no limit."
+            hint="Max per withdrawal. 0 = use the global limit (Wallets & Support)."
             value={form.withdrawalLimit}
             onChange={(e) => set('withdrawalLimit')(e.target.value)}
           />

@@ -66,6 +66,8 @@ export type DashboardPayload = {
   tutorial: Tutorial;
   capabilities: Capability[];
   banners: Banner[];
+  /** Telegram support link from the admin Wallets & Support screen. */
+  supportUrl: string | null;
   topEarners: TopEarner[];
 };
 
@@ -274,6 +276,16 @@ export type LedgerEntry = Transaction & {
 /** A deposit/withdrawal in the admin Financials queue. */
 export type FinancialRequest = LedgerEntry & {
   member: { id: string; displayName: string; email: string };
+};
+
+export type WalletInput = Omit<Wallet, 'id'>;
+
+/** Group-wide settings from the admin Wallets & Support screen. */
+export type Settings = {
+  telegramSupportUrl: string | null;
+  /** Max per withdrawal for members without their own limit; 0 = no limit. */
+  globalWithdrawalLimit: number;
+  updatedAt: string;
 };
 
 /** A plan activation in the admin Plan Requests queue. */

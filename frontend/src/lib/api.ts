@@ -19,10 +19,12 @@ import type {
   PlanRequest,
   PlansPayload,
   ProductInput,
+  Settings,
   Transaction,
   TransactionType,
   User,
   Wallet,
+  WalletInput,
 } from './types';
 
 /** `{ a: 1, b: undefined }` → `?a=1` */
@@ -212,6 +214,15 @@ export const api = {
       request<Banner>(`/admin/banners/${bannerId}`, { method: 'PATCH', body }),
     deleteBanner: (bannerId: string) =>
       request<{ id: string }>(`/admin/banners/${bannerId}`, { method: 'DELETE' }),
+
+    /** Only these are offered in the trader's Deposit Center. */
+    wallets: () => request<Wallet[]>('/admin/wallets'),
+    createWallet: (body: WalletInput) => request<Wallet>('/admin/wallets', { method: 'POST', body }),
+    deleteWallet: (walletId: string) =>
+      request<{ id: string }>(`/admin/wallets/${walletId}`, { method: 'DELETE' }),
+    settings: () => request<Settings>('/admin/settings'),
+    saveSettings: (body: Pick<Settings, 'telegramSupportUrl' | 'globalWithdrawalLimit'>) =>
+      request<Settings>('/admin/settings', { method: 'PUT', body }),
 
     planRequests: (params: { scope: 'active' | 'history'; offset?: number }) =>
       request<Paged<PlanRequest> & { pending: number }>(`/admin/plan-requests${qs(params)}`),

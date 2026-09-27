@@ -329,3 +329,16 @@ export const HelpIcon = (p: IconProps) => (
     <path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.3-2.4 3.8M12 17h.01" />
   </svg>
 );
+
+export const ChatIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M12 3.5a8.5 8.5 0 0 0-7.4 12.7L3.5 20.5l4.4-1.1A8.5 8.5 0 1 0 12 3.5Z" />
+  </svg>
+);
+
+export const SaveIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M5 3.5h11l3.5 3.5v11.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2v-13a2 2 0 0 1 2-2Z" />
+    <path d="M7.5 3.5v5h8v-5M7.5 20.5v-6h9v6" />
+  </svg>
+);

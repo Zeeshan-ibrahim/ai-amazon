@@ -135,13 +135,24 @@ wallet paid into; withdrawal: the member's destination) and `hasReceipt`.
 | PATCH | `/admin/banners/:bannerId` | Any of the create fields |
 | DELETE | `/admin/banners/:bannerId` | Permanent delete |
 
+### Wallets & support
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| GET | `/admin/wallets` | Active `Wallet[]` — exactly what traders get from `GET /wallets` in the Deposit Center |
+| POST | `/admin/wallets` | `{ coin, network, address }` → `201`; coin and network are stored uppercase. `409` if that network + address is already active. Re-adding a deleted one restores it |
+| DELETE | `/admin/wallets/:walletId` | Soft delete: no longer offered for deposits (a deposit naming it gets `400`); past deposits keep their record |
+| GET | `/admin/settings` | `{ telegramSupportUrl, globalWithdrawalLimit, updatedAt }` |
+| PUT | `/admin/settings` | `{ telegramSupportUrl, globalWithdrawalLimit }`, both saved together. The URL must be `http(s)://…` or empty |
+
 ## Business rules
 
 - **Assigned orders are hidden until the trader has an approved deposit.**
   `GET /products` returns no items and `meta.depositRequired: true` until
   then. Admin balance adjustments don't count as deposits.
 - Deposits and withdrawals are requests. Only admin approval moves the balance.
-- `withdrawalLimit` is the maximum per withdrawal request; `0` means no limit.
+- The per-withdrawal limit is the member's own `withdrawalLimit` when it's
+  above 0, otherwise the global limit from settings; `0` there means no limit.
 - Purchasing an order debits its price and moves it to the Sell tab.
   Selling credits price + profit (`totalReturn`) and moves it to Completed.
   Each is recorded as an approved `order_purchase` / `order_sale` ledger row
@@ -161,7 +172,7 @@ Balances below come from the signed-in user's row.
 
 | Method | Path | Returns |
 | --- | --- | --- |
-| GET | `/dashboard` | `{ user, stats, balance, tutorial, capabilities, banners, topEarners }` — `banners` is the admin-managed list |
+| GET | `/dashboard` | `{ user, stats, balance, tutorial, capabilities, banners, supportUrl, topEarners }` — `banners` is the admin-managed list; `supportUrl` is the Telegram support link from settings (banners open it, pre-filling their support note on `t.me` links) |
 | GET | `/deposits/live` | `LiveDeposit[]` — powers the ticker |
 
 ### Products
@@ -187,7 +198,7 @@ Balances below come from the signed-in user's row.
 | GET | `/faq` | `{ id, question, answer }[]` for Help & Platform FAQ |
 | GET | `/wallets` | Active company wallets: `{ id, coin, network, address }[]` |
 | POST | `/deposits` | **multipart/form-data**: `amount` (min 10), `walletId`, `receipt` (JPG/PNG/WEBP, max 5MB, checked by file signature) → `201` pending |
-| POST | `/withdrawals` | `amount`, `address`, `pin` → `201` pending (recorded as USDT TRC20). `400` without a PIN set, with a wrong PIN, above the balance or above the member's withdrawal limit |
+| POST | `/withdrawals` | `amount`, `address`, `pin` → `201` pending (recorded as USDT TRC20). `400` without a PIN set, with a wrong PIN, above the balance or above the withdrawal limit (member's own, else global) |
 
 Neither moves the balance; an admin approves or rejects it. `status` reads
 `PENDING`, then `COMPLETED` (approved) or `REJECTED`.

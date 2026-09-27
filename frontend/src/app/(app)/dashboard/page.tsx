@@ -86,7 +86,7 @@ export default function DashboardPage() {
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:gap-5">
               {data.banners.map((banner) => (
-                <BannerCard key={banner.id} banner={banner} />
+                <BannerCard key={banner.id} banner={banner} supportUrl={data.supportUrl} />
               ))}
             </div>
           )}

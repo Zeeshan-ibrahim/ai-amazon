@@ -4,7 +4,8 @@
  *
  * Built: members (list, create, particulars, ledger, orders, audits),
  * financials (the deposit/withdrawal review queue), the product catalog,
- * plans, plan requests and banners. Still to come: analytics, wallets.
+ * plans, plan requests, banners, and wallets & support settings. Still to
+ * come: analytics.
  */
 import { Router } from 'express';
 import { withTransaction } from '../db/pool.js';
@@ -45,6 +46,8 @@ import {
   reviewTransaction,
   toLedgerEntry,
 } from '../models/transactions.js';
+import { getSettings, saveSettings } from '../models/settings.js';
+import { archiveWallet, createWallet, listActiveWallets, toWallet } from '../models/wallets.js';
 import { receiptFile } from '../uploads.js';
 import {
   createUser,
@@ -589,6 +592,51 @@ router.delete('/banners/:bannerId', async (req, res) => {
   const found = UUID_PATTERN.test(req.params.bannerId) && (await deleteBanner(req.params.bannerId));
   if (!found) return fail(res, 404, 'Banner not found.');
   ok(res, { id: req.params.bannerId });
+});
+
+/* ----------------------------------------------------- wallets & support */
+
+const MAX_COIN_LENGTH = 20;
+const MAX_NETWORK_LENGTH = 30;
+const MAX_ADDRESS_LENGTH = 200;
+
+router.get('/wallets', async (req, res) => ok(res, await listActiveWallets()));
+
+/** `{ coin, network, address }` — coin and network are stored uppercase. */
+router.post('/wallets', async (req, res) => {
+  const coin = String(req.body?.coin ?? '').trim().toUpperCase();
+  const network = String(req.body?.network ?? '').trim().toUpperCase();
+  const address = String(req.body?.address ?? '').trim();
+
+  if (!coin || coin.length > MAX_COIN_LENGTH) return fail(res, 400, 'Enter a coin, e.g. USDT.');
+  if (!network || network.length > MAX_NETWORK_LENGTH) return fail(res, 400, 'Enter a network, e.g. TRC20.');
+  if (!address || /\s/.test(address) || address.length > MAX_ADDRESS_LENGTH) {
+    return fail(res, 400, 'Enter the wallet address without spaces.');
+  }
+
+  const row = await createWallet({ coin, network, address });
+  if (!row) return fail(res, 409, 'This address is already listed for that network.');
+  ok(res, toWallet(row), 201);
+});
+
+router.delete('/wallets/:walletId', async (req, res) => {
+  const found = UUID_PATTERN.test(req.params.walletId) && (await archiveWallet(req.params.walletId));
+  if (!found) return fail(res, 404, 'Wallet not found.');
+  ok(res, { id: req.params.walletId });
+});
+
+router.get('/settings', async (req, res) => ok(res, await getSettings()));
+
+/** `{ telegramSupportUrl, globalWithdrawalLimit }` — both saved together. */
+router.put('/settings', async (req, res) => {
+  const url = String(req.body?.telegramSupportUrl ?? '').trim();
+  if (url && !/^https?:\/\/\S+$/i.test(url)) {
+    return fail(res, 400, 'Support link must start with https://, e.g. https://t.me/your_support.');
+  }
+  const limit = money(req.body?.globalWithdrawalLimit ?? 0);
+  if (!(limit >= 0 && limit <= MAX_PRICE)) return fail(res, 400, 'Withdrawal limit must be 0 or more.');
+
+  ok(res, await saveSettings({ telegramSupportUrl: url || null, globalWithdrawalLimit: limit }));
 });
 
 /* -------------------------------------------------------------- audits */

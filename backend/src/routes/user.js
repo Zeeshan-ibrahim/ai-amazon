@@ -19,6 +19,7 @@ import {
 } from '../models/transactions.js';
 import multer from 'multer';
 import { findById, UUID_PATTERN, verifySecret } from '../models/users.js';
+import { getSettings } from '../models/settings.js';
 import { findActiveWallet, listActiveWallets } from '../models/wallets.js';
 import { discardReceipt, MAX_RECEIPT_BYTES, receiptUpload, saveReceipt, UploadError } from '../uploads.js';
 import { fail, ok } from './respond.js';
@@ -33,18 +34,23 @@ const router = Router();
 
 /* ------------------------------------------------------------- dashboard */
 
-/** `banners` is the admin-managed list from the Banners section. */
-router.get('/dashboard', async (req, res) =>
+/**
+ * `banners` is the admin-managed list from the Banners section;
+ * `supportUrl` is the Telegram link from Wallets & Support (or null).
+ */
+router.get('/dashboard', async (req, res) => {
+  const [banners, settings] = await Promise.all([listBanners(), getSettings()]);
   ok(res, {
     user: req.user,
     stats: db.dashboardStats,
     balance: req.user.balance,
     tutorial: db.tutorial,
     capabilities: db.capabilities,
-    banners: await listBanners(),
+    banners,
+    supportUrl: settings.telegramSupportUrl,
     topEarners: db.topEarners,
-  })
-);
+  });
+});
 
 router.get('/deposits/live', (req, res) => ok(res, db.liveDeposits));
 
@@ -247,8 +253,8 @@ router.post('/deposits', parseReceipt, async (req, res) => {
 });
 
 /**
- * Records a pending withdrawal, authorized by the withdrawal PIN. Checked against the balance and the member's
- * per-withdrawal limit (0 = no limit); the balance moves on admin approval.
+ * Records a pending withdrawal, authorized by the withdrawal PIN. Checked against the balance and the
+ * per-withdrawal limit — the member's own, else the global one (0 = no limit); the balance moves on admin approval.
  */
 router.post('/withdrawals', async (req, res) => {
   const { amount, address, pin } = req.body ?? {};
@@ -264,7 +270,8 @@ router.post('/withdrawals', async (req, res) => {
     return fail(res, 400, 'Withdrawal PIN is incorrect.');
   }
 
-  const limit = req.userRow.withdrawal_limit;
+  // The member's own limit wins; otherwise the group-wide one. 0 = no limit.
+  const limit = req.userRow.withdrawal_limit || (await getSettings()).globalWithdrawalLimit;
   if (limit > 0 && value > limit) {
     return fail(res, 400, `The maximum per withdrawal on this account is $${limit.toFixed(2)}.`);
   }

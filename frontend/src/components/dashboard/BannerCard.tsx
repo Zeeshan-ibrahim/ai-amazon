@@ -1,17 +1,24 @@
 import { ImageIcon } from '@/components/ui/Icons';
 import type { Banner } from '@/lib/types';
 
-/** Support account's Telegram username, without the @. Unset → banners aren't links. */
-const TELEGRAM_SUPPORT = process.env.NEXT_PUBLIC_TELEGRAM_SUPPORT?.replace(/^@/, '');
+/**
+ * The support link with the banner's note typed into the message box. Telegram
+ * reads `?text=` on t.me links; other links open as they are.
+ */
+function supportLink(supportUrl: string | null, note: string) {
+  if (!supportUrl) return null;
+  try {
+    const url = new URL(supportUrl);
+    if (note && url.hostname === 't.me') url.searchParams.set('text', note);
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
 
-/** Opens the support chat with the banner's note typed into the message box. */
-const supportLink = (banner: Banner) =>
-  TELEGRAM_SUPPORT
-    ? `https://t.me/${TELEGRAM_SUPPORT}${banner.supportNote ? `?text=${encodeURIComponent(banner.supportNote)}` : ''}`
-    : null;
-
-export function BannerCard({ banner }: { banner: Banner }) {
-  const href = supportLink(banner);
+/** `supportUrl` unset → the banner isn't a link. */
+export function BannerCard({ banner, supportUrl }: { banner: Banner; supportUrl: string | null }) {
+  const href = supportLink(supportUrl, banner.supportNote);
   const body = (
     <>
       <div className="aspect-[16/9] bg-black/[0.03]">
