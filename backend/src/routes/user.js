@@ -2,12 +2,13 @@
  * The trader app (dashboard, products, plans, ledger). Mounted behind
  * `requireRole('user')` — admins get a 403 here and use `/api/admin`.
  *
- * Orders, plans, transactions and balances are in Postgres. Dashboard
- * content is still in-memory demo data until its rules are defined.
+ * Orders, plans, banners, transactions and balances are in Postgres. The
+ * rest of the dashboard content is still in-memory demo data.
  */
 import { Router } from 'express';
 import * as db from '../data/demo.js';
 import { listOrdersForUser, purchaseOrder, sellOrder, toTraderOrder } from '../models/orders.js';
+import { listBanners } from '../models/banners.js';
 import { activatePlan, listContractsForUser, listPlans } from '../models/plans.js';
 import {
   createRequest,
@@ -32,14 +33,15 @@ const router = Router();
 
 /* ------------------------------------------------------------- dashboard */
 
-router.get('/dashboard', (req, res) =>
+/** `banners` is the admin-managed list from the Banners section. */
+router.get('/dashboard', async (req, res) =>
   ok(res, {
     user: req.user,
     stats: db.dashboardStats,
     balance: req.user.balance,
     tutorial: db.tutorial,
     capabilities: db.capabilities,
-    campaigns: db.campaigns,
+    banners: await listBanners(),
     topEarners: db.topEarners,
   })
 );

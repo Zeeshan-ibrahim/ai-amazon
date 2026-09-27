@@ -134,6 +134,29 @@ if (planCount[0].n === 0) {
   console.log(`created ${plans.length} plans`);
 }
 
+/* ------------------------------------------------------------- banners */
+
+const bannerImg = (id) => `https://images.unsplash.com/${id}?w=1200&h=675&fit=crop`;
+
+// [title, description, image] — oldest first, so the list shows them in reverse.
+const banners = [
+  ['Equities & Stock Market', 'High-yield algorithmic trading allocations', bannerImg('photo-1611974789855-9c2a0a7236a3')],
+  ['Real Estate Opportunities', 'Premium global property acquisitions', bannerImg('photo-1486406146926-c627a92ad1ab')],
+  ['Crypto Investments', 'Next-generation digital asset portfolios', bannerImg('photo-1518546305927-5a555bb7020d')],
+];
+
+const { rows: bannerCount } = await query('SELECT count(*)::int AS n FROM banners');
+if (bannerCount[0].n === 0) {
+  for (const [i, [title, description, image]] of banners.entries()) {
+    await query(
+      `INSERT INTO banners (title, description, image_url, created_at)
+       VALUES ($1, $2, $3, now() - make_interval(mins => $4))`,
+      [title, description, image, banners.length - i]
+    );
+  }
+  console.log(`created ${banners.length} banners`);
+}
+
 /* ------------------------------------------------------------- wallets */
 
 // Placeholder addresses — replace from the admin Wallets section before real use.

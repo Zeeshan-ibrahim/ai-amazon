@@ -28,8 +28,6 @@ export const capabilities = [
   { id: 'partners', label: 'Partner networks', value: 'Amazon, Alibaba' },
 ];
 
-export const campaigns = [];
-
 export const topEarners = [
   {
     rank: '01',

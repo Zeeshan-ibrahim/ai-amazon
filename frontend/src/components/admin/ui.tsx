@@ -182,8 +182,9 @@ const fieldTones: Record<FieldTone, string> = {
 
 const fieldBase = `${fieldShape} ${fieldTones.outlined}`;
 
-function FieldLabel({ htmlFor, children }: { htmlFor: string; children: ReactNode }) {
-  return (
+/** `aside` sits at the right end of the label row, e.g. a size hint. */
+function FieldLabel({ htmlFor, aside, children }: { htmlFor: string; aside?: ReactNode; children: ReactNode }) {
+  const label = (
     <label
       htmlFor={htmlFor}
       className="mb-2.5 block pl-2 text-[11px] font-bold uppercase tracking-[0.16em] text-subtle"
@@ -191,22 +192,32 @@ function FieldLabel({ htmlFor, children }: { htmlFor: string; children: ReactNod
       {children}
     </label>
   );
+  if (!aside) return label;
+  return (
+    <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1">
+      {label}
+      <div className="mb-2.5">{aside}</div>
+    </div>
+  );
 }
 
 export const AdminInput = forwardRef<
   HTMLInputElement,
   InputHTMLAttributes<HTMLInputElement> & {
     label: string;
+    labelAside?: ReactNode;
     hint?: string;
     prefix?: string;
     tone?: FieldTone;
   }
->(function AdminInput({ label, hint, prefix, tone = 'outlined', className, id, ...props }, ref) {
+>(function AdminInput({ label, labelAside, hint, prefix, tone = 'outlined', className, id, ...props }, ref) {
   const generated = useId();
   const inputId = id ?? generated;
   return (
     <div className="w-full">
-      <FieldLabel htmlFor={inputId}>{label}</FieldLabel>
+      <FieldLabel htmlFor={inputId} aside={labelAside}>
+        {label}
+      </FieldLabel>
       <div className="relative">
         {prefix && (
           <span className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-[16px] font-semibold text-ink">

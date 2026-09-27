@@ -126,6 +126,15 @@ wallet paid into; withdrawal: the member's destination) and `hasReceipt`.
 | POST | `/admin/plan-requests/:contractId/approve` | `PENDING` → `ACTIVE`. No balance change (the price was debited at activation) |
 | POST | `/admin/plan-requests/:contractId/reject` | `PENDING` → `REJECTED` and refunds the price as an approved `plan_refund` credit. `409` if already reviewed |
 
+### Banners
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| GET | `/admin/banners` | `Banner[]`, newest first — the same list traders get as `banners` in `GET /dashboard` |
+| POST | `/admin/banners` | `{ title, description?, imageUrl?, supportNote? }` → `201`. `supportNote` pre-fills the Telegram support chat when a trader taps the banner |
+| PATCH | `/admin/banners/:bannerId` | Any of the create fields |
+| DELETE | `/admin/banners/:bannerId` | Permanent delete |
+
 ## Business rules
 
 - **Assigned orders are hidden until the trader has an approved deposit.**
@@ -152,7 +161,7 @@ Balances below come from the signed-in user's row.
 
 | Method | Path | Returns |
 | --- | --- | --- |
-| GET | `/dashboard` | `{ user, stats, balance, tutorial, capabilities, campaigns, topEarners }` |
+| GET | `/dashboard` | `{ user, stats, balance, tutorial, capabilities, banners, topEarners }` — `banners` is the admin-managed list |
 | GET | `/deposits/live` | `LiveDeposit[]` — powers the ticker |
 
 ### Products

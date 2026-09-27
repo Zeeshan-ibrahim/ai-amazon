@@ -32,7 +32,24 @@ export type Tutorial = { eyebrow: string; title: string; body: string };
 
 export type Capability = { id: string; label: string; value: string };
 
-export type Campaign = { id: string; title: string; body: string };
+/** A promotional banner — admins manage it, traders see it on the dashboard. */
+export type Banner = {
+  id: string;
+  title: string;
+  description: string;
+  image: string | null;
+  /** Pre-filled message for the Telegram support chat when the banner is tapped. */
+  supportNote: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type BannerInput = {
+  title: string;
+  description: string;
+  imageUrl: string;
+  supportNote: string;
+};
 
 export type TopEarner = {
   rank: string;
@@ -48,7 +65,7 @@ export type DashboardPayload = {
   balance: number;
   tutorial: Tutorial;
   capabilities: Capability[];
-  campaigns: Campaign[];
+  banners: Banner[];
   topEarners: TopEarner[];
 };
 

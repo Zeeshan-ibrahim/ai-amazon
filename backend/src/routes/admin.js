@@ -4,7 +4,7 @@
  *
  * Built: members (list, create, particulars, ledger, orders, audits),
  * financials (the deposit/withdrawal review queue), the product catalog,
- * plans and plan requests. Still to come: analytics, banners, wallets.
+ * plans, plan requests and banners. Still to come: analytics, wallets.
  */
 import { Router } from 'express';
 import { withTransaction } from '../db/pool.js';
@@ -18,6 +18,7 @@ import {
   toAdminOrder,
   updateOrderByAdmin,
 } from '../models/orders.js';
+import { createBanner, deleteBanner, listBanners, toBanner, updateBanner } from '../models/banners.js';
 import {
   archivePlan,
   createPlan,
@@ -523,6 +524,72 @@ const reviewPlan = (approve) => async (req, res) => {
 
 router.post('/plan-requests/:contractId/approve', reviewPlan(true));
 router.post('/plan-requests/:contractId/reject', reviewPlan(false));
+
+/* ------------------------------------------------------------- banners */
+
+const MAX_BANNER_TITLE_LENGTH = 120;
+const MAX_SUPPORT_NOTE_LENGTH = 500;
+
+/**
+ * Validates the Add/Edit Banner form. Returns `{ error }` or `{ changes }`
+ * with only the fields that were sent; creating requires a title.
+ */
+function readBannerInput(body, { creating }) {
+  const { title, description, imageUrl, supportNote } = body ?? {};
+  const changes = {};
+
+  if (title !== undefined || creating) {
+    changes.title = String(title ?? '').trim();
+    if (!changes.title) return { error: 'Enter a banner title.' };
+    if (changes.title.length > MAX_BANNER_TITLE_LENGTH) {
+      return { error: `Keep the title under ${MAX_BANNER_TITLE_LENGTH} characters.` };
+    }
+  }
+  if (imageUrl !== undefined || creating) {
+    const url = String(imageUrl ?? '').trim();
+    if (url && !/^https?:\/\/\S+$/i.test(url)) {
+      return { error: 'Image URL must start with http:// or https://.' };
+    }
+    changes.imageUrl = url || null;
+  }
+  if (description !== undefined || creating) {
+    changes.description = String(description ?? '').trim();
+    if (changes.description.length > MAX_DESCRIPTION_LENGTH) {
+      return { error: `Keep the description under ${MAX_DESCRIPTION_LENGTH} characters.` };
+    }
+  }
+  if (supportNote !== undefined || creating) {
+    changes.supportNote = String(supportNote ?? '').trim();
+    if (changes.supportNote.length > MAX_SUPPORT_NOTE_LENGTH) {
+      return { error: `Keep the support note under ${MAX_SUPPORT_NOTE_LENGTH} characters.` };
+    }
+  }
+  return { changes };
+}
+
+router.get('/banners', async (req, res) => ok(res, await listBanners()));
+
+router.post('/banners', async (req, res) => {
+  const { error, changes } = readBannerInput(req.body, { creating: true });
+  if (error) return fail(res, 400, error);
+  ok(res, toBanner(await createBanner(changes)), 201);
+});
+
+router.patch('/banners/:bannerId', async (req, res) => {
+  if (!UUID_PATTERN.test(req.params.bannerId)) return fail(res, 404, 'Banner not found.');
+  const { error, changes } = readBannerInput(req.body, { creating: false });
+  if (error) return fail(res, 400, error);
+
+  const row = await updateBanner(req.params.bannerId, changes);
+  if (!row) return fail(res, 404, 'Banner not found.');
+  ok(res, toBanner(row));
+});
+
+router.delete('/banners/:bannerId', async (req, res) => {
+  const found = UUID_PATTERN.test(req.params.bannerId) && (await deleteBanner(req.params.bannerId));
+  if (!found) return fail(res, 404, 'Banner not found.');
+  ok(res, { id: req.params.bannerId });
+});
 
 /* -------------------------------------------------------------- audits */
 

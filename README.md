@@ -51,6 +51,7 @@ Signup can only ever create `user` accounts.
 
 ```
 NEXT_PUBLIC_API_URL=http://localhost:4000/api
+NEXT_PUBLIC_TELEGRAM_SUPPORT=     # optional: support username; banners link to this chat
 ```
 
 `backend/.env` — see `backend/.env.example`: `DATABASE_URL`, `JWT_SECRET`,
@@ -62,7 +63,7 @@ NEXT_PUBLIC_API_URL=http://localhost:4000/api
 | Route | Description |
 | --- | --- |
 | `/login`, `/signup` | Split hero / form auth screens |
-| `/dashboard` | Balance, stats, tutorial, capabilities, campaigns, top earners |
+| `/dashboard` | Balance, stats, tutorial, capabilities, admin banners, top earners |
 | `/products` | Purchase / Sell / Completed order queues with funding checks |
 | `/plans` | Admin-managed plans — activate one from your balance; your contracts |
 | `/history` | Full transaction ledger |
@@ -72,6 +73,7 @@ NEXT_PUBLIC_API_URL=http://localhost:4000/api
 | `/admin/financials` | Deposit and withdrawal requests from all members — approve, reject, view receipt |
 | `/admin/plans` | Create, edit and delete the plans traders see on `/plans` |
 | `/admin/plan-requests` | Plan activations from all members — approve, or reject and refund; history |
+| `/admin/banners` | Create, edit and delete the banners shown on every member's dashboard |
 | `/admin/*` | Other admin sections — placeholders |
 
 ## Roles

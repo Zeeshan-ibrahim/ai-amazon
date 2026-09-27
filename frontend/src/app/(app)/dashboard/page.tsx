@@ -3,6 +3,7 @@
 import { Avatar } from '@/components/ui/Avatar';
 import { useCallback, useState } from 'react';
 import { BalanceCard } from '@/components/dashboard/BalanceCard';
+import { BannerCard } from '@/components/dashboard/BannerCard';
 import { CapabilitiesGrid } from '@/components/dashboard/CapabilitiesGrid';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { TopEarners } from '@/components/dashboard/TopEarners';
@@ -16,7 +17,7 @@ import { api } from '@/lib/api';
 import { greeting } from '@/lib/format';
 import type { DashboardPayload } from '@/lib/types';
 
-const fetchDashboard = () => api.dashboard() as Promise<DashboardPayload>;
+const fetchDashboard = () => api.dashboard();
 
 export default function DashboardPage() {
   const fetcher = useCallback(fetchDashboard, []);
@@ -80,18 +81,12 @@ export default function DashboardPage() {
       <section>
         <SectionTitle>Exclusive store campaigns</SectionTitle>
         <div className="mt-4 lg:mt-5">
-          {data.campaigns.length === 0 ? (
+          {data.banners.length === 0 ? (
             <EmptyState title="No active administrative campaigns at this time. Check back later." />
           ) : (
-            <div className="grid gap-4 lg:grid-cols-2">
-              {data.campaigns.map((campaign) => (
-                <div
-                  key={campaign.id}
-                  className="rounded-card border border-line bg-white p-5 shadow-card"
-                >
-                  <p className="font-medium text-ink">{campaign.title}</p>
-                  <p className="mt-1.5 text-[13px] text-muted">{campaign.body}</p>
-                </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:gap-5">
+              {data.banners.map((banner) => (
+                <BannerCard key={banner.id} banner={banner} />
               ))}
             </div>
           )}

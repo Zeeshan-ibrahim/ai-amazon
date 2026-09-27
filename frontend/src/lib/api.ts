@@ -3,8 +3,11 @@ import type {
   AdminOrderEdit,
   AdminProduct,
   AuditEntry,
+  Banner,
+  BannerInput,
   CatalogProduct,
   Contract,
+  DashboardPayload,
   FaqItem,
   FinancialRequest,
   LedgerEntry,
@@ -135,7 +138,7 @@ export const api = {
   updateLanguage: (language: string) =>
     request('/me/language', { method: 'PUT', body: { language } }),
 
-  dashboard: () => request('/dashboard'),
+  dashboard: () => request<DashboardPayload>('/dashboard'),
   liveDeposits: () => request('/deposits/live'),
 
   products: () => request('/products'),
@@ -202,6 +205,13 @@ export const api = {
     /** Hides it from traders; members' existing contracts are unaffected. */
     deletePlan: (planId: string) =>
       request<{ id: string }>(`/admin/plans/${planId}`, { method: 'DELETE' }),
+
+    banners: () => request<Banner[]>('/admin/banners'),
+    createBanner: (body: BannerInput) => request<Banner>('/admin/banners', { method: 'POST', body }),
+    updateBanner: (bannerId: string, body: Partial<BannerInput>) =>
+      request<Banner>(`/admin/banners/${bannerId}`, { method: 'PATCH', body }),
+    deleteBanner: (bannerId: string) =>
+      request<{ id: string }>(`/admin/banners/${bannerId}`, { method: 'DELETE' }),
 
     planRequests: (params: { scope: 'active' | 'history'; offset?: number }) =>
       request<Paged<PlanRequest> & { pending: number }>(`/admin/plan-requests${qs(params)}`),
