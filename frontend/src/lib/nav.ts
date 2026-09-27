@@ -38,5 +38,5 @@ export const adminNavItems = [
   { slug: 'financials', label: 'Financials', title: 'Financials', icon: SwapIcon, built: true },
   { slug: 'banners', label: 'Banners', title: 'Banners', icon: ImageIcon, built: true },
   { slug: 'wallets', label: 'Wallets', title: 'Wallets & Support', icon: WalletIcon, built: true },
-  { slug: 'account', label: 'My Acc', title: 'My Account', icon: UserIcon },
+  { slug: 'account', label: 'My Acc', title: 'Group Overview', icon: UserIcon, built: true },
 ];

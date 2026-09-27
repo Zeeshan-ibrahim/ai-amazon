@@ -4,8 +4,8 @@
  *
  * Built: members (list, create, particulars, ledger, orders, audits),
  * financials (the deposit/withdrawal review queue), the product catalog,
- * plans, plan requests, banners, and wallets & support settings. Still to
- * come: analytics.
+ * plans, plan requests, banners, wallets & support settings, and the group
+ * overview (My Acc). Still to come: analytics.
  */
 import { Router } from 'express';
 import { withTransaction } from '../db/pool.js';
@@ -46,6 +46,7 @@ import {
   reviewTransaction,
   toLedgerEntry,
 } from '../models/transactions.js';
+import { getDiagnostics, getOverview } from '../models/overview.js';
 import { getSettings, saveSettings } from '../models/settings.js';
 import { archiveWallet, createWallet, listActiveWallets, toWallet } from '../models/wallets.js';
 import { receiptFile } from '../uploads.js';
@@ -637,6 +638,21 @@ router.put('/settings', async (req, res) => {
   if (!(limit >= 0 && limit <= MAX_PRICE)) return fail(res, 400, 'Withdrawal limit must be 0 or more.');
 
   ok(res, await saveSettings({ telegramSupportUrl: url || null, globalWithdrawalLimit: limit }));
+});
+
+/* ------------------------------------------------------------ overview */
+
+/** Group totals plus live system checks for the signed-in admin. */
+router.get('/overview', async (req, res) => {
+  const [stats, diagnostics] = await Promise.all([getOverview(), getDiagnostics()]);
+  ok(res, {
+    ...stats,
+    diagnostics: {
+      ...diagnostics,
+      admin: { role: req.user.role, username: req.user.username, email: req.user.loginEmail },
+    },
+    generatedAt: new Date().toISOString(),
+  });
 });
 
 /* -------------------------------------------------------------- audits */

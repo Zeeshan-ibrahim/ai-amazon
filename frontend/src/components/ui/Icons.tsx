@@ -342,3 +342,10 @@ export const SaveIcon = (p: IconProps) => (
     <path d="M7.5 3.5v5h8v-5M7.5 20.5v-6h9v6" />
   </svg>
 );
+
+export const TrendIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="m3 16.5 6-6 4 4 8-8" />
+    <path d="M15 6.5h6v6" />
+  </svg>
+);

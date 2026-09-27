@@ -1,5 +1,6 @@
 import type {
   AdminOrder,
+  AdminOverview,
   AdminOrderEdit,
   AdminProduct,
   AuditEntry,
@@ -167,6 +168,8 @@ export const api = {
   languages: () => request('/languages'),
 
   admin: {
+    overview: () => request<AdminOverview>('/admin/overview'),
+
     members: (params: { q?: string; offset?: number }) =>
       request<Paged<Member>>(`/admin/members${qs(params)}`),
     createMember: (body: MemberInput) =>

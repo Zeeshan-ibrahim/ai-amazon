@@ -73,6 +73,7 @@ NEXT_PUBLIC_API_URL=http://localhost:4000/api
 | `/admin/plans` | Create, edit and delete the plans traders see on `/plans` |
 | `/admin/plan-requests` | Plan activations from all members — approve, or reject and refund; history |
 | `/admin/banners` | Create, edit and delete the banners shown on every member's dashboard |
+| `/admin/account` | My Acc: group overview — members, products, pending requests, total volume, system diagnostics |
 | `/admin/wallets` | Deposit wallets (the only ones traders can pay into), Telegram support link, global withdrawal limit |
 | `/admin/*` | Other admin sections — placeholders |
 

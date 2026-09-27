@@ -145,6 +145,12 @@ wallet paid into; withdrawal: the member's destination) and `hasReceipt`.
 | GET | `/admin/settings` | `{ telegramSupportUrl, globalWithdrawalLimit, updatedAt }` |
 | PUT | `/admin/settings` | `{ telegramSupportUrl, globalWithdrawalLimit }`, both saved together. The URL must be `http(s)://…` or empty |
 
+### Overview
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| GET | `/admin/overview` | `{ members, activeProducts, pendingDeposits, pendingWithdrawals, totalVolume, approvedDeposits, diagnostics, generatedAt }` for My Acc. `members` counts `user` accounts; `totalVolume` is the sum of member balances right now (equal to their approved ledger, so every deposit, withdrawal, adjustment, order and plan moves it); `approvedDeposits` is the all-time deposit total. `diagnostics` = `{ admin: { role, username, email }, database: { connected, latencyMs }, schema: { version, appliedAt } }` |
+
 ## Business rules
 
 - **Assigned orders are hidden until the trader has an approved deposit.**

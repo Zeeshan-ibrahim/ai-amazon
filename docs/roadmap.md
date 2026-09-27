@@ -33,8 +33,8 @@ role-gated frontend apps. Still open:
 Built: **Members** (list, add, particulars, ledger, orders, audits),
 **Financials** (deposit/withdrawal review queue with receipts), **Products**
 (catalog CRUD), **Plans** (plan CRUD), **Plan Requests** (approve, or
-reject and refund), **Banners** and **Wallets & Support**. Still
-placeholders: analytics, my account.
+reject and refund), **Banners**, **Wallets & Support** and **My Acc** (group
+overview). Still a placeholder: analytics.
 
 Built without reference screenshots — search the frontend for
 `PicturesNeeded` to find them: the member **Ledger** and **Audits** tabs and

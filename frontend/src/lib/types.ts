@@ -288,6 +288,26 @@ export type Settings = {
   updatedAt: string;
 };
 
+/** The admin Group Overview (My Acc). */
+export type AdminOverview = {
+  /** Accounts with role `user`. */
+  members: number;
+  activeProducts: number;
+  pendingDeposits: number;
+  pendingWithdrawals: number;
+  /** Sum of all member balances right now. */
+  totalVolume: number;
+  /** All-time total of approved deposits. */
+  approvedDeposits: number;
+  diagnostics: {
+    admin: { role: Role; username: string; email: string };
+    database: { connected: boolean; latencyMs: number | null };
+    /** Last applied migration, e.g. "012_settings". */
+    schema: { version: string; appliedAt: string } | null;
+  };
+  generatedAt: string;
+};
+
 /** A plan activation in the admin Plan Requests queue. */
 export type PlanRequest = Contract & {
   image: string | null;
