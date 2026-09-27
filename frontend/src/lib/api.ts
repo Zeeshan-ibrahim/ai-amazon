@@ -1,6 +1,7 @@
 import type {
   AdminOrder,
   AdminOrderEdit,
+  AdminProduct,
   AuditEntry,
   CatalogProduct,
   FaqItem,
@@ -9,6 +10,7 @@ import type {
   Member,
   MemberInput,
   Paged,
+  ProductInput,
   Transaction,
   TransactionType,
   User,
@@ -176,6 +178,16 @@ export const api = {
         method: 'POST',
         body: {},
       }),
+
+    products: (params: { offset?: number } = {}) =>
+      request<Paged<AdminProduct>>(`/admin/products${qs(params)}`),
+    createProduct: (body: ProductInput) =>
+      request<AdminProduct>('/admin/products', { method: 'POST', body }),
+    updateProduct: (productId: string, body: Partial<ProductInput>) =>
+      request<AdminProduct>(`/admin/products/${productId}`, { method: 'PATCH', body }),
+    /** Removes it from the catalog; members' existing orders are unaffected. */
+    deleteProduct: (productId: string) =>
+      request<{ id: string }>(`/admin/products/${productId}`, { method: 'DELETE' }),
 
     catalog: (
       id: string,

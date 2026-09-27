@@ -245,6 +245,12 @@ export const SearchIcon = (p: IconProps) => (
   </svg>
 );
 
+export const PlusIcon = (p: IconProps) => (
+  <svg {...base(p)} strokeWidth={2}>
+    <path d="M12 5v14M5 12h14" />
+  </svg>
+);
+
 export const UserPlusIcon = (p: IconProps) => (
   <svg {...base(p)}>
     <circle cx="9.5" cy="8" r="4" />

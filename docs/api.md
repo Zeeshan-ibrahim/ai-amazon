@@ -100,6 +100,15 @@ wallet paid into; withdrawal: the member's destination) and `hasReceipt`.
 | GET | `/admin/members/:id/catalog` | `?q=&min=&max=&limit=&offset=` → `{ total, items: CatalogProduct[] }`. `q` matches the title, or the start of the price if numeric. `assigned` says whether this member has it open |
 | POST | `/admin/members/:id/orders` | `productId` → `201`. `409` if already open for this member; `400` for admin accounts |
 
+### Product catalog
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| GET | `/admin/products` | `?limit=&offset=` → `{ total, items: AdminProduct[] }`, active products cheapest first |
+| POST | `/admin/products` | `{ title, price, profitPercentage?, imageUrl?, description? }` → `201` |
+| PATCH | `/admin/products/:productId` | Any of the create fields. Open orders keep the price and profit they were assigned with |
+| DELETE | `/admin/products/:productId` | Soft delete (`is_active = false`): gone from the catalog and allocation hub; existing orders are unaffected |
+
 ## Business rules
 
 - **Assigned orders are hidden until the trader has an approved deposit.**

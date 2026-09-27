@@ -192,6 +192,27 @@ export type CatalogProduct = {
   assigned: boolean;
 };
 
+/** A catalog product on the admin Products screen. */
+export type AdminProduct = {
+  id: string;
+  title: string;
+  image: string | null;
+  description: string;
+  price: number;
+  /** Return on the entry price, e.g. 2.5 for 2.5%. */
+  profitPercentage: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ProductInput = {
+  title: string;
+  price: number;
+  profitPercentage: number;
+  imageUrl: string;
+  description: string;
+};
+
 export type OrderStatus = 'assigned' | 'purchased' | 'completed';
 
 /** A member's order as the admin sees it (Orders tab, right column). */

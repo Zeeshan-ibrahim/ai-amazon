@@ -11,6 +11,7 @@ import {
   type InputHTMLAttributes,
   type ReactNode,
   type SelectHTMLAttributes,
+  type TextareaHTMLAttributes,
 } from 'react';
 import { cn } from '@/lib/cn';
 import type { Role } from '@/lib/types';
@@ -121,8 +122,18 @@ export function AdminButton({
 
 /* ------------------------------------------------------------- fields */
 
-const fieldBase =
-  'w-full rounded-2xl border-[1.5px] border-black/80 bg-[#fafafa] px-5 py-4 text-[16px] font-semibold text-ink placeholder:font-medium placeholder:text-subtle focus:border-black focus:bg-white focus:outline-none focus:ring-4 focus:ring-gold/20 disabled:cursor-not-allowed disabled:opacity-60';
+const fieldShape =
+  'w-full rounded-2xl px-5 py-4 text-[16px] font-semibold text-ink placeholder:font-medium placeholder:text-subtle focus:bg-white focus:outline-none focus:ring-4 focus:ring-gold/20 disabled:cursor-not-allowed disabled:opacity-60';
+
+/** `outlined` for member forms, `soft` for the lighter modal forms (products). */
+type FieldTone = 'outlined' | 'soft';
+
+const fieldTones: Record<FieldTone, string> = {
+  outlined: 'border-[1.5px] border-black/80 bg-[#fafafa] focus:border-black',
+  soft: 'border border-black/[0.05] bg-[#f7f7f7] focus:border-black/30',
+};
+
+const fieldBase = `${fieldShape} ${fieldTones.outlined}`;
 
 function FieldLabel({ htmlFor, children }: { htmlFor: string; children: ReactNode }) {
   return (
@@ -137,8 +148,13 @@ function FieldLabel({ htmlFor, children }: { htmlFor: string; children: ReactNod
 
 export const AdminInput = forwardRef<
   HTMLInputElement,
-  InputHTMLAttributes<HTMLInputElement> & { label: string; hint?: string; prefix?: string }
->(function AdminInput({ label, hint, prefix, className, id, ...props }, ref) {
+  InputHTMLAttributes<HTMLInputElement> & {
+    label: string;
+    hint?: string;
+    prefix?: string;
+    tone?: FieldTone;
+  }
+>(function AdminInput({ label, hint, prefix, tone = 'outlined', className, id, ...props }, ref) {
   const generated = useId();
   const inputId = id ?? generated;
   return (
@@ -150,12 +166,40 @@ export const AdminInput = forwardRef<
             {prefix}
           </span>
         )}
-        <input ref={ref} id={inputId} className={cn(fieldBase, prefix && 'pl-10', className)} {...props} />
+        <input
+          ref={ref}
+          id={inputId}
+          className={cn(fieldShape, fieldTones[tone], prefix && 'pl-10', className)}
+          {...props}
+        />
       </div>
       {hint && <p className="mt-2 pl-2 text-[12px] text-subtle">{hint}</p>}
     </div>
   );
 });
+
+export function AdminTextarea({
+  label,
+  hint,
+  tone = 'outlined',
+  id,
+  className,
+  ...props
+}: TextareaHTMLAttributes<HTMLTextAreaElement> & { label: string; hint?: string; tone?: FieldTone }) {
+  const generated = useId();
+  const textareaId = id ?? generated;
+  return (
+    <div className="w-full">
+      <FieldLabel htmlFor={textareaId}>{label}</FieldLabel>
+      <textarea
+        id={textareaId}
+        className={cn(fieldShape, fieldTones[tone], 'min-h-[120px] resize-y leading-relaxed', className)}
+        {...props}
+      />
+      {hint && <p className="mt-2 pl-2 text-[12px] text-subtle">{hint}</p>}
+    </div>
+  );
+}
 
 export function AdminSelect({
   label,

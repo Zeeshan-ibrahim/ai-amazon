@@ -32,7 +32,7 @@ export const navItems = [
 export const adminNavItems = [
   { slug: 'analytics', label: 'Analytics', title: 'Analytics', icon: LayoutIcon },
   { slug: 'members', label: 'Members', title: 'Members', icon: UsersIcon, built: true },
-  { slug: 'products', label: 'Products', title: 'Products', icon: BagIcon },
+  { slug: 'products', label: 'Products', title: 'Products', icon: BagIcon, built: true },
   { slug: 'plans', label: 'Plans', title: 'Plans', icon: ShieldIcon },
   { slug: 'plan-requests', label: 'Plan Req', title: 'Plan Requests', icon: SwapIcon },
   { slug: 'financials', label: 'Financials', title: 'Financials', icon: SwapIcon, built: true },

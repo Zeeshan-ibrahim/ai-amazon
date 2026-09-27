@@ -2,9 +2,9 @@
  * Admin panel API. Mounted at `/api/admin` behind `requireRole('admin')`,
  * so every handler here can assume an admin session.
  *
- * Built: members (list, create, particulars, ledger, orders, audits) and
- * financials (the deposit/withdrawal review queue).
- * Still to come: analytics, products, plans, plan requests, banners, wallets.
+ * Built: members (list, create, particulars, ledger, orders, audits),
+ * financials (the deposit/withdrawal review queue) and the product catalog.
+ * Still to come: analytics, plans, plan requests, banners, wallets.
  */
 import { Router } from 'express';
 import { withTransaction } from '../db/pool.js';
@@ -18,7 +18,14 @@ import {
   toAdminOrder,
   updateOrderByAdmin,
 } from '../models/orders.js';
-import { listCatalog } from '../models/products.js';
+import {
+  archiveProduct,
+  createProduct,
+  listCatalog,
+  listProducts,
+  toAdminProduct,
+  updateProduct,
+} from '../models/products.js';
 import {
   adjustBalance,
   findTransaction,
@@ -341,6 +348,82 @@ router.delete('/members/:id/orders/:orderId', async (req, res) => {
   if (!UUID_PATTERN.test(req.params.orderId)) return fail(res, 404, 'Order not found.');
   await removeOrderByAdmin({ orderId: req.params.orderId, userId: req.member.id, adminId: req.user.id });
   ok(res, { id: req.params.orderId });
+});
+
+/* ------------------------------------------------------------ products */
+
+const MAX_TITLE_LENGTH = 300;
+const MAX_DESCRIPTION_LENGTH = 5000;
+
+/**
+ * Validates the Add/Edit Product form. Returns `{ error }` or `{ changes }`
+ * with only the fields that were sent; creating requires title and price.
+ */
+function readProductInput(body, { creating }) {
+  const { title, imageUrl, description, price, profitPercentage } = body ?? {};
+  const changes = {};
+
+  if (title !== undefined || creating) {
+    changes.title = String(title ?? '').trim();
+    if (!changes.title) return { error: 'Enter a product title.' };
+    if (changes.title.length > MAX_TITLE_LENGTH) {
+      return { error: `Keep the title under ${MAX_TITLE_LENGTH} characters.` };
+    }
+  }
+  if (price !== undefined || creating) {
+    changes.price = money(price);
+    if (!(changes.price > 0 && changes.price <= MAX_PRICE)) {
+      return { error: 'Enter an entry price greater than $0.' };
+    }
+  }
+  if (profitPercentage !== undefined || creating) {
+    const n = Number(profitPercentage ?? 0);
+    changes.profitPercentage = Number.isFinite(n) ? Math.round(n * 1000) / 1000 : NaN;
+    if (!(changes.profitPercentage >= 0 && changes.profitPercentage <= MAX_PROFIT_PERCENTAGE)) {
+      return { error: 'Enter a return % between 0 and 999.999.' };
+    }
+  }
+  if (imageUrl !== undefined || creating) {
+    const url = String(imageUrl ?? '').trim();
+    if (url && !/^https?:\/\/\S+$/i.test(url)) {
+      return { error: 'Image URL must start with http:// or https://.' };
+    }
+    changes.imageUrl = url || null;
+  }
+  if (description !== undefined || creating) {
+    changes.description = String(description ?? '').trim();
+    if (changes.description.length > MAX_DESCRIPTION_LENGTH) {
+      return { error: `Keep the description under ${MAX_DESCRIPTION_LENGTH} characters.` };
+    }
+  }
+  return { changes };
+}
+
+router.get('/products', async (req, res) => {
+  ok(res, await listProducts(page(req.query, 40)));
+});
+
+router.post('/products', async (req, res) => {
+  const { error, changes } = readProductInput(req.body, { creating: true });
+  if (error) return fail(res, 400, error);
+  ok(res, toAdminProduct(await createProduct(changes)), 201);
+});
+
+router.patch('/products/:productId', async (req, res) => {
+  if (!UUID_PATTERN.test(req.params.productId)) return fail(res, 404, 'Product not found.');
+  const { error, changes } = readProductInput(req.body, { creating: false });
+  if (error) return fail(res, 400, error);
+
+  const row = await updateProduct(req.params.productId, changes);
+  if (!row) return fail(res, 404, 'Product not found.');
+  ok(res, toAdminProduct(row));
+});
+
+router.delete('/products/:productId', async (req, res) => {
+  const found =
+    UUID_PATTERN.test(req.params.productId) && (await archiveProduct(req.params.productId));
+  if (!found) return fail(res, 404, 'Product not found.');
+  ok(res, { id: req.params.productId });
 });
 
 /* -------------------------------------------------------------- audits */
