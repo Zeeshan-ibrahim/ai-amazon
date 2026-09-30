@@ -40,7 +40,7 @@ export const adminNavItems: {
   built?: true;
   only?: Role;
 }[] = [
-  { slug: 'analytics', label: 'Analytics', title: 'Analytics', icon: LayoutIcon },
+  { slug: 'analytics', label: 'Analytics', title: 'Analytics', icon: LayoutIcon, built: true },
   { slug: 'members', label: 'Members', title: 'Members', icon: UsersIcon, built: true },
   { slug: 'sub-admins', label: 'Sub-admins', title: 'Sub-admins', icon: CrownIcon, built: true, only: 'super_admin' },
   { slug: 'products', label: 'Products', title: 'Products', icon: BagIcon, built: true },
