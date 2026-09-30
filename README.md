@@ -65,6 +65,10 @@ at the Transaction pooler (port 6543) and set `SUPABASE_URL`,
 `SUPABASE_SERVICE_ROLE_KEY` and `SUPABASE_BUCKET` (a private bucket, default
 `receipts`). Without `SUPABASE_URL`, receipts are written to `UPLOAD_DIR`.
 
+Production deploys run `npm run db:migrate` as the backend's Vercel build step
+(`vercel.json`), so pending migrations apply before the new code goes live and a
+failing migration fails the deploy. Preview deploys skip it.
+
 ## Screens
 
 | Route | Description |
