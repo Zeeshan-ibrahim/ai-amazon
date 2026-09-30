@@ -162,7 +162,7 @@ function DepositForm({ wallets, onDone }: { wallets: Wallet[]; onDone: () => Pro
               onChange={(e) => setReceipt(e.target.files?.[0] ?? null)}
               className="block w-full rounded-2xl border-[1.5px] border-dashed border-black/30 bg-[#fafafa] px-5 py-4 text-[14px] text-ink file:mr-4 file:rounded-xl file:border-0 file:bg-black file:px-4 file:py-2 file:text-[11px] file:font-extrabold file:uppercase file:tracking-[0.14em] file:text-gold"
             />
-            <p className="mt-2 pl-2 text-[12px] text-subtle">JPG, PNG or WEBP, up to 5MB.</p>
+            <p className="mt-2 pl-2 text-[12px] text-subtle">JPG, PNG or WEBP, up to 4MB.</p>
           </div>
           {result && <Notice tone={result.tone}>{result.text}</Notice>}
           <AdminButton

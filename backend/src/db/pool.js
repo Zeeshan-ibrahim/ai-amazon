@@ -8,7 +8,17 @@ if (!process.env.DATABASE_URL) {
 // Money columns are NUMERIC(14,2), which a JS number represents exactly.
 pg.types.setTypeParser(pg.types.builtins.NUMERIC, Number);
 
-export const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+const isLocal = /@?(localhost|127\.0\.0\.1)[:/]/.test(process.env.DATABASE_URL);
+
+// Hosted Postgres (Supabase) needs TLS; its cert chain is not in Node's
+// default store, so encrypt without verifying the CA. Serverless instances
+// each hold their own pool, so keep it to one connection there and let the
+// Supabase transaction pooler (port 6543) do the multiplexing.
+export const pool = new pg.Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: isLocal ? false : { rejectUnauthorized: false },
+  max: process.env.VERCEL ? 1 : 10,
+});
 
 export const query = (text, params) => pool.query(text, params);
 

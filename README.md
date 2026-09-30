@@ -60,6 +60,11 @@ NEXT_PUBLIC_API_URL=http://localhost:4000/api
 `CLIENT_ORIGIN` (the frontend origin allowed to send the session cookie),
 `UPLOAD_DIR` (receipt screenshots; defaults to `backend/uploads`).
 
+In production the database and receipts live in Supabase: point `DATABASE_URL`
+at the Transaction pooler (port 6543) and set `SUPABASE_URL`,
+`SUPABASE_SERVICE_ROLE_KEY` and `SUPABASE_BUCKET` (a private bucket, default
+`receipts`). Without `SUPABASE_URL`, receipts are written to `UPLOAD_DIR`.
+
 ## Screens
 
 | Route | Description |

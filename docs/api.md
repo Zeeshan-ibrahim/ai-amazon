@@ -241,7 +241,7 @@ Balances below come from the signed-in user's row.
 | GET | `/transactions` | The trader's own ledger, newest first. Optional `?limit=5` and `?type=deposit\|withdrawal\|adjustment\|order_purchase\|order_sale\|plan_activation\|plan_refund` (`400` otherwise). Each row carries `type`, `coin`, `network`, `address`, `reviewedAt` |
 | GET | `/faq` | `{ id, question, answer }[]` for Help & Platform FAQ |
 | GET | `/wallets` | Active company wallets: `{ id, coin, network, address }[]` |
-| POST | `/deposits` | **multipart/form-data**: `amount` (min 10), `walletId`, `receipt` (JPG/PNG/WEBP, max 5MB, checked by file signature) → `201` pending |
+| POST | `/deposits` | **multipart/form-data**: `amount` (min 10), `walletId`, `receipt` (JPG/PNG/WEBP, max 4MB, checked by file signature) → `201` pending |
 | POST | `/withdrawals` | `amount`, `address`, `pin` → `201` pending (recorded as USDT TRC20). `400` without a PIN set, with a wrong PIN, above the balance or above the withdrawal limit (member's own, else global) |
 
 Neither moves the balance; an admin approves or rejects it. `status` reads

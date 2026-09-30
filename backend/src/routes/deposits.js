@@ -29,7 +29,7 @@ export const parseReceipt = (req, res, next) =>
   });
 
 /**
- * Multipart: `amount`, `walletId`, `receipt` (JPG/PNG/WEBP, max 5MB), after
+ * Multipart: `amount`, `walletId`, `receipt` (JPG/PNG/WEBP, max 4MB), after
  * `parseReceipt`. Records a pending deposit for the signed-in account.
  */
 export async function receiveDeposit(req, res) {

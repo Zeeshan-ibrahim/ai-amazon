@@ -67,7 +67,7 @@ import {
 import { getDiagnostics, getOverview } from '../models/overview.js';
 import { getSettings, saveSettings } from '../models/settings.js';
 import { archiveWallet, createWallet, listActiveWallets, toWallet } from '../models/wallets.js';
-import { receiptFile } from '../uploads.js';
+import { readReceipt } from '../uploads.js';
 import { parseReceipt, receiveDeposit } from './deposits.js';
 import {
   createUser,
@@ -365,22 +365,20 @@ router.get('/transactions/:transactionId/receipt', async (req, res) => {
     : null;
   if (!tx?.receipt_path) return fail(res, 404, 'Receipt not found.');
 
-  const { filePath, mime } = receiptFile(tx.receipt_path);
-  res.sendFile(
-    filePath,
-    {
-      headers: {
-        'Content-Type': mime,
-        'Content-Disposition': 'inline',
-        'Cache-Control': 'private, max-age=300',
-        'X-Content-Type-Options': 'nosniff',
-        'Content-Security-Policy': "default-src 'none'",
-        // The admin app runs on another origin and embeds this with <img>.
-        'Cross-Origin-Resource-Policy': 'same-site',
-      },
-    },
-    (err) => err && !res.headersSent && fail(res, 404, 'Receipt not found.')
-  );
+  const file = await readReceipt(tx.receipt_path);
+  if (!file) return fail(res, 404, 'Receipt not found.');
+
+  res
+    .set({
+      'Content-Type': file.mime,
+      'Content-Disposition': 'inline',
+      'Cache-Control': 'private, max-age=300',
+      'X-Content-Type-Options': 'nosniff',
+      'Content-Security-Policy': "default-src 'none'",
+      // The admin app runs on another origin and embeds this with <img>.
+      'Cross-Origin-Resource-Policy': 'same-site',
+    })
+    .send(file.buffer);
 });
 
 /* -------------------------------------------------------------- orders */

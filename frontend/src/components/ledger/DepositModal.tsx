@@ -24,7 +24,7 @@ import { formatCurrency } from '@/lib/format';
 import type { Wallet } from '@/lib/types';
 
 const MIN_DEPOSIT = 10;
-const MAX_RECEIPT_BYTES = 5 * 1024 * 1024;
+const MAX_RECEIPT_BYTES = 4 * 1024 * 1024;
 const RECEIPT_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 const fetchWallets = () => api.wallets();
@@ -402,7 +402,7 @@ function PaymentStep({
   const accept = (file: File | undefined) => {
     if (!file) return;
     if (!RECEIPT_TYPES.includes(file.type)) return onError('Receipt must be a JPG, PNG or WEBP image.');
-    if (file.size > MAX_RECEIPT_BYTES) return onError('Receipt must be 5MB or smaller.');
+    if (file.size > MAX_RECEIPT_BYTES) return onError('Receipt must be 4MB or smaller.');
     onReceipt(file);
   };
 
@@ -485,7 +485,7 @@ function PaymentStep({
           {receipt ? receipt.name : 'Click to select payment screenshot'}
         </span>
         <span className="mt-1.5 text-[12px] text-subtle">
-          {receipt ? 'Click to choose a different image' : 'Supports JPG, JPEG, PNG, WEBP • Maximum File Size: 5MB'}
+          {receipt ? 'Click to choose a different image' : 'Supports JPG, JPEG, PNG, WEBP • Maximum File Size: 4MB'}
         </span>
       </button>
 

@@ -1,16 +1,17 @@
 /**
- * Receipt screenshots. Kept on local disk under UPLOAD_DIR/receipts with
- * server-generated names; swap `saveReceipt`/`receiptFile` for object
- * storage when deploying to more than one machine.
+ * Receipt screenshots, stored under server-generated names. With
+ * SUPABASE_URL set they go to a private Supabase Storage bucket (required on
+ * Vercel, whose filesystem does not persist); otherwise they stay on local
+ * disk under UPLOAD_DIR/receipts for development.
  */
 import { randomUUID } from 'node:crypto';
-import { mkdir, unlink, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { createClient } from '@supabase/supabase-js';
 import multer from 'multer';
 
-export const MAX_RECEIPT_BYTES = 5 * 1024 * 1024;
-
-const RECEIPT_DIR = path.resolve(process.env.UPLOAD_DIR ?? 'uploads', 'receipts');
+// Vercel rejects request bodies over 4.5MB, so stay under that.
+export const MAX_RECEIPT_BYTES = 4 * 1024 * 1024;
 
 /** Identify the image by its bytes — the browser-supplied type is not trusted. */
 const SIGNATURES = [
@@ -29,7 +30,52 @@ const SIGNATURES = [
 
 const MIME_BY_EXT = Object.fromEntries(SIGNATURES.map((s) => [s.ext, s.mime]));
 
-/** Parses a single `receipt` file field into memory (`req.file`), max 5MB. */
+const mimeOf = (name) => MIME_BY_EXT[path.extname(name).slice(1)] ?? 'application/octet-stream';
+
+/* ------------------------------------------------------------- storage */
+
+/** Private Supabase Storage bucket, reached with the service-role key. */
+function supabaseStore() {
+  const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_BUCKET = 'receipts' } = process.env;
+  if (!SUPABASE_SERVICE_ROLE_KEY) throw new Error('SUPABASE_SERVICE_ROLE_KEY is not set.');
+
+  const bucket = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  }).storage.from(SUPABASE_BUCKET);
+
+  return {
+    async put(name, buffer, mime) {
+      const { error } = await bucket.upload(name, buffer, { contentType: mime, upsert: false });
+      if (error) throw error;
+    },
+    async get(name) {
+      const { data, error } = await bucket.download(name);
+      return error ? null : Buffer.from(await data.arrayBuffer());
+    },
+    async remove(name) {
+      await bucket.remove([name]);
+    },
+  };
+}
+
+/** Local folder, for development without Supabase. */
+function diskStore() {
+  const dir = path.resolve(process.env.UPLOAD_DIR ?? 'uploads', 'receipts');
+  return {
+    async put(name, buffer) {
+      await mkdir(dir, { recursive: true });
+      await writeFile(path.join(dir, name), buffer, { flag: 'wx' });
+    },
+    get: (name) => readFile(path.join(dir, name)).catch(() => null),
+    remove: (name) => unlink(path.join(dir, name)),
+  };
+}
+
+const store = process.env.SUPABASE_URL ? supabaseStore() : diskStore();
+
+/* ----------------------------------------------------------------- API */
+
+/** Parses a single `receipt` file field into memory (`req.file`), max 4MB. */
 export const receiptUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: MAX_RECEIPT_BYTES, files: 1 },
@@ -37,24 +83,21 @@ export const receiptUpload = multer({
 
 export class UploadError extends Error {}
 
-/** Validates and writes the image; returns the stored file name. */
+/** Validates and stores the image; returns the stored file name. */
 export async function saveReceipt(buffer) {
   const kind = SIGNATURES.find((s) => buffer.length > 12 && s.test(buffer));
   if (!kind) throw new UploadError('Receipt must be a JPG, PNG or WEBP image.');
 
-  await mkdir(RECEIPT_DIR, { recursive: true });
   const name = `${randomUUID()}.${kind.ext}`;
-  await writeFile(path.join(RECEIPT_DIR, name), buffer, { flag: 'wx' });
+  await store.put(name, buffer, kind.mime);
   return name;
 }
 
-export const discardReceipt = (name) => unlink(path.join(RECEIPT_DIR, path.basename(name))).catch(() => {});
+export const discardReceipt = (name) => store.remove(path.basename(name)).catch(() => {});
 
-/** Absolute path + content type for a stored receipt name. */
-export function receiptFile(name) {
+/** Bytes + content type for a stored receipt name, or null if it is gone. */
+export async function readReceipt(name) {
   const safe = path.basename(name);
-  return {
-    filePath: path.join(RECEIPT_DIR, safe),
-    mime: MIME_BY_EXT[path.extname(safe).slice(1)] ?? 'application/octet-stream',
-  };
+  const buffer = await store.get(safe);
+  return buffer && { buffer, mime: mimeOf(safe) };
 }

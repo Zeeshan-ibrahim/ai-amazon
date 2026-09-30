@@ -202,7 +202,7 @@ router.get('/faq', (req, res) => ok(res, db.faq));
 router.get('/wallets', async (req, res) => ok(res, await listActiveWallets()));
 
 /**
- * Multipart: `amount`, `walletId`, `receipt` (JPG/PNG/WEBP, max 5MB).
+ * Multipart: `amount`, `walletId`, `receipt` (JPG/PNG/WEBP, max 4MB).
  * Records a pending deposit; the balance moves only when an admin approves it.
  */
 router.post('/deposits', parseReceipt, receiveDeposit);
