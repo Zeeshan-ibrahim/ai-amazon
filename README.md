@@ -11,7 +11,7 @@ Amazon arbitrage trading dashboard — a Next.js frontend and an Express API.
 
 ## Getting started
 
-Needs Node 20.12+ and a running PostgreSQL. Two terminals — the backend must
+Needs Node 24 and a running PostgreSQL. Two terminals — the backend must
 be running before the frontend can load data.
 
 ```bash
