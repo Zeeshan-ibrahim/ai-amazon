@@ -6,6 +6,7 @@ import { navItems } from '@/lib/nav';
 import { cn } from '@/lib/cn';
 import { Avatar } from '@/components/ui/Avatar';
 import { CrownIcon, LogoutIcon } from '@/components/ui/Icons';
+import { UnreadBadge, useUnread } from '@/components/messages/UnreadProvider';
 import { Logo } from './Logo';
 import { useSession } from './SessionProvider';
 import type { User } from '@/lib/types';
@@ -13,6 +14,7 @@ import type { User } from '@/lib/types';
 export function Sidebar({ user }: { user: User | null }) {
   const pathname = usePathname();
   const { logout } = useSession();
+  const { counts } = useUnread();
 
   return (
     <aside className="fixed inset-y-0 left-0 z-40 hidden w-[276px] flex-col bg-sidebar-veil p-4 text-white shadow-panel lg:flex">
@@ -22,7 +24,7 @@ export function Sidebar({ user }: { user: User | null }) {
         </Link>
 
         <nav className="flex flex-col gap-1">
-          {navItems.map(({ href, label, icon: Icon }) => {
+          {navItems.map(({ href, label, icon: Icon, unread }) => {
             const isActive = pathname.startsWith(href);
             return (
               <Link
@@ -36,7 +38,8 @@ export function Sidebar({ user }: { user: User | null }) {
                 )}
               >
                 <Icon className="h-[19px] w-[19px]" />
-                {label}
+                <span className="flex-1">{label}</span>
+                {unread && <UnreadBadge count={counts.count} />}
               </Link>
             );
           })}

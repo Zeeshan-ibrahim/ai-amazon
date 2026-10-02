@@ -4,14 +4,16 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { navItems } from '@/lib/nav';
 import { cn } from '@/lib/cn';
+import { UnreadBadge, useUnread } from '@/components/messages/UnreadProvider';
 
 export function MobileTabBar() {
   const pathname = usePathname();
+  const { counts } = useUnread();
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 backdrop-blur lg:hidden">
       <div className="mx-auto flex max-w-lg items-stretch justify-between px-2 pb-[max(env(safe-area-inset-bottom),8px)] pt-2">
-        {navItems.map(({ href, mobileLabel, mobileIcon: Icon }) => {
+        {navItems.map(({ href, mobileLabel, mobileIcon: Icon, unread }) => {
           const isActive = pathname.startsWith(href);
           return (
             <Link
@@ -22,7 +24,12 @@ export function MobileTabBar() {
                 isActive ? 'text-ink' : 'text-subtle'
               )}
             >
-              <Icon className={cn('h-[21px] w-[21px]', isActive && 'scale-105')} />
+              <span className="relative">
+                <Icon className={cn('h-[21px] w-[21px]', isActive && 'scale-105')} />
+                {unread && (
+                  <UnreadBadge count={counts.count} className="absolute -right-3 -top-2 h-4 min-w-[16px] px-1 text-[10px]" />
+                )}
+              </span>
               <span
                 className={cn(
                   'text-[10px]',

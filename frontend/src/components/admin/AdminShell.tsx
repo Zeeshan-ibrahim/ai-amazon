@@ -8,6 +8,7 @@ import { MenuIcon } from '@/components/ui/Icons';
 import { EmptyState } from '@/components/ui/States';
 import { cn } from '@/lib/cn';
 import { adminSectionOf } from '@/lib/nav';
+import { UnreadProvider, useUnread } from '@/components/messages/UnreadProvider';
 import { AdminSidebar } from './AdminSidebar';
 
 /**
@@ -15,6 +16,15 @@ import { AdminSidebar } from './AdminSidebar';
  * Mobile: light top bar with a menu button that opens the sidebar as a drawer.
  */
 export function AdminShell({ children }: { children: ReactNode }) {
+  return (
+    <UnreadProvider>
+      <AdminFrame>{children}</AdminFrame>
+    </UnreadProvider>
+  );
+}
+
+function AdminFrame({ children }: { children: ReactNode }) {
+  const { counts } = useUnread();
   const pathname = usePathname();
   const { user } = useSession();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -60,9 +70,12 @@ export function AdminShell({ children }: { children: ReactNode }) {
             aria-label="Open menu"
             aria-expanded={menuOpen}
             aria-controls="admin-sidebar"
-            className="rounded-xl border border-line bg-white p-2.5 text-ink transition-colors hover:bg-cream"
+            className="relative rounded-xl border border-line bg-white p-2.5 text-ink transition-colors hover:bg-cream"
           >
             <MenuIcon className="h-5 w-5" />
+            {counts.count > 0 && (
+              <span aria-label="Unread messages" className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-white bg-gold" />
+            )}
           </button>
         </header>
 

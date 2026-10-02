@@ -11,6 +11,7 @@ import { AddedByBadge, MemberInitial, RoleBadge } from '@/components/admin/ui';
 import { useSession } from '@/components/layout/SessionProvider';
 import {
   CartIcon,
+  ChatIcon,
   ChevronLeftIcon,
   HistoryIcon,
   ShieldIcon,
@@ -44,6 +45,13 @@ export default function MemberPage() {
     return <ErrorState message={error ?? 'Member unavailable.'} onRetry={refetch} />;
   }
 
+  // The same rule as the API's inbox scope: a sub-admin writes to their own
+  // members; a super-admin to sub-admins and members nobody else owns.
+  const canMessage =
+    member.role === 'sub_admin'
+      ? user?.role === 'super_admin'
+      : member.role === 'user' && (user?.role === 'sub_admin' || !member.addedBy);
+
   return (
     <div className="space-y-6 lg:space-y-8">
       <header className="flex flex-col gap-6 border-b border-line pb-6 sm:flex-row sm:items-center">
@@ -55,7 +63,7 @@ export default function MemberPage() {
           Back to members
         </Link>
         <span aria-hidden className="hidden h-10 w-px bg-line sm:block" />
-        <div className="flex min-w-0 items-center gap-4">
+        <div className="flex min-w-0 flex-1 items-center gap-4">
           <MemberInitial name={member.displayName} size="lg" />
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-3">
@@ -72,6 +80,15 @@ export default function MemberPage() {
             </p>
           </div>
         </div>
+        {canMessage && (
+          <Link
+            href={`/admin/messages?with=${member.id}`}
+            className="inline-flex h-10 w-fit shrink-0 items-center gap-2 rounded-xl bg-ink px-4 text-[13px] font-medium text-white transition-colors hover:bg-black/85"
+          >
+            <ChatIcon className="h-4 w-4" />
+            Message
+          </Link>
+        )}
       </header>
 
       <nav

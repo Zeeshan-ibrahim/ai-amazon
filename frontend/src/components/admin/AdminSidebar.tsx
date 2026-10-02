@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { Logo } from '@/components/layout/Logo';
 import { useSession } from '@/components/layout/SessionProvider';
 import { CloseIcon, LogoutIcon, UserIcon } from '@/components/ui/Icons';
+import { UnreadBadge, useUnread } from '@/components/messages/UnreadProvider';
 import { cn } from '@/lib/cn';
 import { adminNavFor } from '@/lib/nav';
 import { ROLE_LABELS } from './ui';
@@ -22,6 +23,7 @@ export function AdminSidebar({
 }) {
   const pathname = usePathname();
   const { user, logout } = useSession();
+  const { counts } = useUnread();
   const handle = user?.username || user?.loginEmail.split('@')[0] || '';
 
   return (
@@ -50,7 +52,7 @@ export function AdminSidebar({
       </div>
 
       <nav className="-mx-1 flex flex-1 flex-col gap-1 overflow-y-auto px-1 scrollbar-none">
-        {adminNavFor(user?.role).map(({ slug, label, icon: Icon }) => {
+        {adminNavFor(user?.role).map(({ slug, label, icon: Icon, unread }) => {
           const href = `/admin/${slug}`;
           const isActive = pathname.startsWith(href);
           return (
@@ -66,7 +68,8 @@ export function AdminSidebar({
               )}
             >
               <Icon className="h-[19px] w-[19px] shrink-0" />
-              {label}
+              <span className="flex-1">{label}</span>
+              {unread && <UnreadBadge count={counts.count} />}
             </Link>
           );
         })}

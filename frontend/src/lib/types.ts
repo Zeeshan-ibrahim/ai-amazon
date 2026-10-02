@@ -371,3 +371,53 @@ export type AdminBalance = {
   transactions: Transaction[];
   wallets: Wallet[];
 };
+
+/* ------------------------------------------------------------ messages */
+
+/** Someone an admin can message: a trader they own, or (super-admin) a sub-admin. */
+export type MessageContact = {
+  id: string;
+  role: Role;
+  status: 'active' | 'suspended';
+  displayName: string;
+  handle: string;
+  email: string;
+};
+
+export type ChatMessage = {
+  id: number;
+  body: string;
+  createdAt: string;
+  /** Written by the member (trader or sub-admin) rather than the admin side. */
+  fromMember: boolean;
+  /** Written by the viewer. */
+  mine: boolean;
+  /** Admin view only: which admin wrote an admin-side message. */
+  sender?: { handle: string; role: Role } | null;
+};
+
+/**
+ * `me` is the viewer's own thread with whoever is above them; otherwise the
+ * member id of a conversation the viewer handles as an admin.
+ */
+export type ThreadId = 'me' | string;
+
+export type ChatThreadPage = {
+  messages: ChatMessage[];
+  hasOlder: boolean;
+  /** The other side has read every message up to this id. */
+  otherReadId: number;
+  side: 'member' | 'admin';
+  /** The member, in the admin view; null in the viewer's own thread. */
+  member: MessageContact | null;
+};
+
+export type InboxItem = {
+  member: MessageContact;
+  unread: number;
+  lastMessageAt: string;
+  lastMessage: { body: string; fromMember: boolean; createdAt: string } | null;
+};
+
+/** `own`: the viewer's own thread. `inbox`: conversations they handle as an admin. */
+export type UnreadCounts = { own: number; inbox: number; count: number };

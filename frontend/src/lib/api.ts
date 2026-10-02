@@ -9,13 +9,17 @@ import type {
   Banner,
   BannerInput,
   CatalogProduct,
+  ChatMessage,
+  ChatThreadPage,
   Contract,
   DashboardPayload,
   FaqItem,
   FinancialRequest,
+  InboxItem,
   LedgerEntry,
   Member,
   MemberInput,
+  MessageContact,
   Paged,
   Plan,
   PlanInput,
@@ -26,7 +30,9 @@ import type {
   SubAdmin,
   SubAdminDetail,
   Transaction,
+  ThreadId,
   TransactionType,
+  UnreadCounts,
   User,
   Wallet,
   WalletInput,
@@ -170,6 +176,24 @@ export const api = {
     request('/withdrawals', { method: 'POST', body }),
 
   languages: () => request('/languages'),
+
+  /** Internal messaging, every role. See backend/src/routes/messages.js. */
+  messages: {
+    unread: () => request<UnreadCounts>('/messages/unread'),
+    /** Admins: the conversations they handle, most recent first. */
+    inbox: (params: { q?: string; kind?: 'user' | 'sub_admin'; limit?: number; offset?: number } = {}) =>
+      request<Paged<InboxItem>>(`/messages/inbox${qs(params)}`),
+    /** Admins: people they can start a conversation with. */
+    contacts: (q: string) => request<MessageContact[]>(`/messages/contacts${qs({ q })}`),
+    /** `after` returns only newer messages (polling); `before` an older page. */
+    thread: (id: ThreadId, params: { after?: number; before?: number } = {}) =>
+      request<ChatThreadPage>(`/messages/threads/${id}${qs(params)}`),
+    send: (id: ThreadId, body: string) =>
+      request<ChatMessage>(`/messages/threads/${id}`, { method: 'POST', body: { body } }),
+    /** Marks the thread read up to `upTo`; returns the viewer's new counts. */
+    markRead: (id: ThreadId, upTo: number) =>
+      request<UnreadCounts>(`/messages/threads/${id}/read`, { method: 'POST', body: { upTo } }),
+  },
 
   admin: {
     overview: () => request<AdminOverview>('/admin/overview'),

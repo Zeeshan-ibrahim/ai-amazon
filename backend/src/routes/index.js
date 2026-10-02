@@ -3,6 +3,7 @@
  *
  *   /auth/*     public
  *   /me, ...    any signed-in role (account.js)
+ *   /messages/* any signed-in role (messages.js)
  *   /admin/*    role = super_admin or sub_admin (admin.js)
  *   everything  role = user  (user.js)
  */
@@ -12,6 +13,7 @@ import { ADMIN_ROLES, ROLES } from '../models/users.js';
 import account from './account.js';
 import admin from './admin.js';
 import auth from './auth.js';
+import messages from './messages.js';
 import { fail } from './respond.js';
 import user from './user.js';
 
@@ -21,6 +23,9 @@ router.use('/auth', auth);
 
 router.use(requireAuth);
 router.use(account);
+router.use('/messages', messages, (req, res) =>
+  fail(res, 404, "We couldn't find what you were looking for.")
+);
 router.use('/admin', requireRole(...ADMIN_ROLES), admin, (req, res) =>
   fail(res, 404, "We couldn't find what you were looking for.")
 );

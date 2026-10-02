@@ -17,6 +17,7 @@ every request, so a role change or suspension applies immediately.
 | --- | --- | --- |
 | Auth | anyone | — |
 | Account | any signed-in role | `401` |
+| Messages (`/messages/*`) | any signed-in role (inbox and contacts: admins) | `401` / `403` |
 | Admin (`/admin/*`) | `role = super_admin` or `sub_admin` | `401` / `403` |
 | Everything else | `role = user` | `401` / `403` |
 
@@ -56,6 +57,28 @@ is the current PIN, or the login password if no PIN is set yet.
 `User`: `{ id, role, status, firstName, lastName, displayName, username, email,
 loginEmail, phone, avatar, language, balance, doubleLedgerPassword, createdAt }`.
 `avatar` may be `null`; `doubleLedgerPassword` is true once a PIN is set.
+
+## Messages
+
+Internal chat between a member and whoever owns them (docs/roles.md →
+Messages). `:id` is `me` for the caller's own thread (traders and
+sub-admins), or a member id for a conversation the caller handles as an
+admin. Anyone else's id is `404`.
+
+| Method | Path | Body | Returns |
+| --- | --- | --- | --- |
+| GET | `/messages/unread` | — | `{ own, inbox, count }` |
+| GET | `/messages/inbox?q=&kind=user\|sub_admin&limit=&offset=` | — | `{ items: InboxItem[], total }`, admins only |
+| GET | `/messages/contacts?q=` | — | `MessageContact[]` an admin can write to |
+| GET | `/messages/threads/:id?after=\|before=` | — | `{ messages, hasOlder, otherReadId, side, member }` |
+| POST | `/messages/threads/:id` | `body` (1–2000 chars) | `201` `ChatMessage` |
+| POST | `/messages/threads/:id/read` | `upTo` (message id) | `{ own, inbox, count }` |
+
+Threads page 50 at a time, oldest first: no cursor gives the latest page,
+`before` an older one, `after` only newer messages (for polling). A member
+never sees which admin wrote to them; in the admin view, admin-side messages
+carry `sender: { handle, role }`. `otherReadId` is the other side's read
+mark, for "Seen". Shapes match `frontend/src/lib/types.ts`.
 
 ## Admin
 

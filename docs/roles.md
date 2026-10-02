@@ -137,6 +137,23 @@ Access to someone else's record by URL/id returns **404** (not 403), so a sub-ad
 
 ------------------------
 
+## MESSAGES
+
+Internal chat, one conversation per member. Who's on the other side follows ownership:
+
+| Member      | Talks to                                                        |
+| ----------- | --------------------------------------------------------------- |
+| `user`      | their sub-admin, or the super-admin if `created_by` is NULL     |
+| `sub_admin` | the super-admin                                                 |
+
+- The admin side isn't stored, so a reassigned user's conversation moves to the new owner with its history.
+- All super-admins share one inbox and one read mark.
+- A user never learns which admin replied; they just see "Support".
+- A super-admin doesn't see the conversations of users owned by a sub-admin.
+- Unread counts show in the sidebar and poll every 20 s while the tab is visible. The Messages page polls the open thread every 4 s and the inbox every 10 s, only while that page is open and visible.
+
+------------------------
+
 ## Implementation
 
 Built. Where things live:
@@ -146,6 +163,7 @@ Built. Where things live:
 - Sub-admins page: `backend/src/models/subAdmins.js`, `frontend/src/app/admin/sub-admins/`.
 - My Balance: `/admin/balance` routes in `admin.js`, `frontend/src/app/admin/balance/`.
 - Menu per role: `only` in `frontend/src/lib/nav.ts`; `AdminShell` blocks the other role's sections.
+- Messages: `backend/migrations/014_messages.sql`, `backend/src/models/messages.js`, `backend/src/routes/messages.js`; `frontend/src/components/messages/`, `/messages` and `/admin/messages`.
 - Demo accounts: `subadmin@demo.test` owns `nora.ali@` and `sam.reed@` (`npm run db:seed`).
 
 ------------------------
