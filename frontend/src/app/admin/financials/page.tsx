@@ -35,18 +35,18 @@ export default function FinancialsPage() {
   const noun = kind === 'deposit' ? 'deposit' : 'withdrawal';
 
   return (
-    <div className="space-y-8">
-      <header className="flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
+    <div className="space-y-6 lg:space-y-8">
+      <header className="flex flex-col gap-5 border-b border-line pb-6 xl:flex-row xl:items-center xl:justify-between">
         <div>
-          <h1 className="text-[32px] font-black uppercase leading-none tracking-tight text-ink sm:text-[40px]">
+          <h1 className="text-[26px] font-medium leading-tight tracking-tight text-ink lg:text-[30px]">
             Requests
           </h1>
-          <p className="mt-3 max-w-xs text-[12px] font-bold uppercase leading-relaxed tracking-[0.18em] text-subtle">
+          <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-muted">
             Review and verify group transactions
           </p>
         </div>
 
-        <div className="flex flex-col gap-2 rounded-3xl border border-black/[0.05] bg-white p-2 shadow-[0_12px_30px_-24px_rgba(0,0,0,0.4)] sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-2 rounded-xl border border-line bg-white p-1.5 shadow-card sm:flex-row sm:items-center">
           <div className="flex" role="tablist" aria-label="Request type">
             {(['deposit', 'withdrawal'] as const).map((k) => (
               <Segment key={k} active={kind === k} tone="dark" onClick={() => setKind(k)} badge={pending[k]}>
@@ -54,11 +54,11 @@ export default function FinancialsPage() {
               </Segment>
             ))}
           </div>
-          <span aria-hidden className="hidden h-10 w-px bg-black/10 sm:block" />
+          <span aria-hidden className="hidden h-7 w-px bg-line sm:block" />
           <div className="flex" role="tablist" aria-label="Request status">
             {(['active', 'history'] as const).map((s) => (
               <Segment key={s} active={scope === s} tone="gold" onClick={() => setScope(s)}>
-                {s}
+                {s === 'active' ? 'Active' : 'History'}
               </Segment>
             ))}
           </div>
@@ -68,18 +68,18 @@ export default function FinancialsPage() {
       {list.error ? (
         <ErrorState message={list.error} onRetry={list.reload} />
       ) : list.loading ? (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {Array.from({ length: 2 }).map((_, i) => (
-            <Skeleton key={i} className="h-80 w-full rounded-[32px]" />
+            <Skeleton key={i} className="h-64 w-full rounded-card" />
           ))}
         </div>
       ) : list.items.length === 0 ? (
         <EmptyState
-          className="border-black/10 bg-white"
+          className="bg-white"
           title={scope === 'active' ? `No ${noun} requests waiting for review.` : `No reviewed ${noun}s yet.`}
         />
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {list.items.map((request) => (
             <RequestCard key={request.id} request={request} onReviewed={onReviewed} />
           ))}

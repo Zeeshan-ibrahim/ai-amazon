@@ -41,12 +41,12 @@ export default function WalletsPage() {
   const wallets = data ?? [];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 lg:space-y-8">
       <AdminPageHeader
         title="Wallets & Support"
         subtitle="Manage group payment addresses and support links"
         actions={
-          <AdminButton onClick={() => setAdding(true)} icon={<PlusIcon className="h-5 w-5" />} className="py-4">
+          <AdminButton onClick={() => setAdding(true)} icon={<PlusIcon className="h-[18px] w-[18px]" />}>
             Add wallet
           </AdminButton>
         }
@@ -59,19 +59,18 @@ export default function WalletsPage() {
       {error ? (
         <ErrorState message={error} onRetry={refetch} />
       ) : loading && !data ? (
-        <div className="grid gap-6 md:grid-cols-2 xl:gap-8">
+        <div className="grid gap-4 md:grid-cols-2 lg:gap-5">
           {Array.from({ length: 2 }).map((_, i) => (
-            <Skeleton key={i} className="h-[260px] rounded-[36px]" />
+            <Skeleton key={i} className="h-[260px] rounded-card" />
           ))}
         </div>
       ) : wallets.length === 0 ? (
         <EmptyState
-          className="border-black/10"
           title="No wallets yet."
           hint="Members can't make deposits until you add at least one."
         />
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 xl:gap-8">
+        <div className="grid gap-4 md:grid-cols-2 lg:gap-5">
           {wallets.map((wallet) => (
             <WalletCard
               key={wallet.id}
@@ -127,16 +126,16 @@ function SupportSettings() {
   };
 
   return (
-    <AdminCard className="sm:p-10">
+    <AdminCard>
       <div className="flex items-center gap-5">
-        <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-gold/30 bg-gold/10 text-gold sm:h-[72px] sm:w-[72px]">
-          <ChatIcon className="h-8 w-8" />
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
+          <ChatIcon className="h-6 w-6" />
         </span>
         <div>
-          <h2 className="text-[20px] font-black uppercase tracking-tight text-ink sm:text-[24px]">
+          <h2 className="text-xl font-medium tracking-tight text-ink sm:text-[22px]">
             Support configuration
           </h2>
-          <p className="mt-1 text-[12px] font-bold uppercase tracking-[0.16em] text-subtle">
+          <p className="mt-1 text-[10px] font-medium uppercase tracking-[0.14em] text-subtle">
             Set your Telegram support link
           </p>
         </div>
@@ -174,7 +173,7 @@ function SupportSettings() {
             loading={saving}
             disabled={!data}
             icon={<SaveIcon className="h-5 w-5" />}
-            className="rounded-[22px] px-10 tracking-[0.18em]"
+            className="px-8"
           >
             Save settings
           </AdminButton>
@@ -196,9 +195,9 @@ function SupportSettings() {
 function WalletCard({ wallet, deleting, onDelete }: { wallet: Wallet; deleting: boolean; onDelete: () => void }) {
   const { copied, copy } = useCopy();
   return (
-    <article className="rounded-[36px] border border-black/[0.07] bg-white p-7 shadow-[0_18px_40px_-28px_rgba(0,0,0,0.25)] sm:p-9">
+    <article className="rounded-card border border-line bg-white p-5 shadow-card sm:p-6">
       <header className="flex items-start justify-between gap-4">
-        <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-black text-gold">
+        <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
           <WalletIcon className="h-6 w-6" />
         </span>
         <button
@@ -216,10 +215,10 @@ function WalletCard({ wallet, deleting, onDelete }: { wallet: Wallet; deleting: 
         </button>
       </header>
 
-      <h2 className="mt-6 text-[22px] font-black uppercase tracking-tight text-ink">{wallet.coin}</h2>
-      <p className="mt-1 text-[13px] font-bold uppercase tracking-[0.14em] text-subtle">{wallet.network}</p>
+      <h2 className="mt-5 text-xl font-medium tracking-tight text-ink">{wallet.coin}</h2>
+      <p className="mt-0.5 text-[13px] text-muted">{wallet.network}</p>
 
-      <div className="mt-6 flex items-center gap-3 rounded-2xl border border-black/[0.05] bg-[#fafafa] py-3.5 pl-5 pr-3">
+      <div className="mt-6 flex items-center gap-3 rounded-xl border border-line bg-cream py-3.5 pl-5 pr-3">
         <span title={wallet.address} className="min-w-0 flex-1 truncate font-mono text-[13px] text-ink/70">
           {wallet.address}
         </span>

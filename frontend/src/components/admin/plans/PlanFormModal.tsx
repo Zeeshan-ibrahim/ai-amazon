@@ -118,7 +118,7 @@ export function PlanFormModal({
           onChange={(e) => set('imageUrl')(e.target.value)}
         />
         {error && <Notice tone="error">{error}</Notice>}
-        <AdminButton type="submit" size="lg" loading={saving} className="w-full rounded-[22px] tracking-[0.2em]">
+        <AdminButton type="submit" size="lg" loading={saving} className="w-full">
           {editing ? 'Update plan' : 'Create plan'}
         </AdminButton>
       </form>

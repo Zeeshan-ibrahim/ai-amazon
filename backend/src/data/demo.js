@@ -16,7 +16,7 @@ export const dashboardStats = [
 
 export const tutorial = {
   eyebrow: 'Arbitrage Tutorial',
-  title: 'How can I earn with "Quick on Amazon"?',
+  title: 'How can I earn with "MallHub"?',
   body:
     'It is simple! Access the "Products" screen to view current active Amazon store items. Make a wholesale "Purchase" on eligible lots, then pivot straight to the "Sell Products" tab to broadcast them as completed items. We immediately pay back your Initial Price plus the arbitrage margin straight into your ledger balance.',
 };
@@ -76,7 +76,7 @@ export const planMeta = {
   subtitle:
     'Partner directly with top-tier international digital retail houses. Secure high priority slots on bulk liquidation parcels and receive immediate yield distributions upon transaction close.',
   guarantee:
-    'All committed logistic partnership capitals on "Quick on Amazon" are 100% principal insured under our dynamic retail reserve policy protocols. Yield paybacks are computed dynamically and processed autonomously back to your balance wallet directly following Super Admin auditing.',
+    'All committed logistic partnership capitals on "MallHub" are 100% principal insured under our dynamic retail reserve policy protocols. Yield paybacks are computed dynamically and processed autonomously back to your balance wallet directly following Super Admin auditing.',
 };
 
 export const languages = [

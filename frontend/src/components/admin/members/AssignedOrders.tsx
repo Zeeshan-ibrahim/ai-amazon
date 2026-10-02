@@ -20,9 +20,9 @@ const STATUS_OPTIONS: Record<OrderStatus, string> = {
 };
 
 const STATUS_BADGES: Record<OrderStatus, { label: string; className: string }> = {
-  assigned: { label: 'Assigned', className: 'border-gold/40 bg-gold/10 text-[#8a6d1f]' },
-  purchased: { label: 'Purchased', className: 'border-black/15 bg-black/[0.04] text-ink' },
-  completed: { label: 'Completed', className: 'border-blue-200 bg-blue-50 text-blue-700' },
+  assigned: { label: 'Assigned', className: 'border-brand-200 bg-brand-50 text-brand-600' },
+  purchased: { label: 'Purchased', className: 'border-line bg-black/5 text-muted' },
+  completed: { label: 'Completed', className: 'border-brand-500 bg-brand-500 text-white' },
 };
 
 /**
@@ -79,7 +79,7 @@ export function AssignedOrders({
 
   return (
     <section className="space-y-5">
-      <div className="grid grid-cols-2 gap-5 rounded-[24px] border-2 border-ink p-5 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-5 rounded-card border border-line bg-cream p-5 sm:grid-cols-4">
         <Summary label="Assigned count" value={`${list.length} contracts`} hint={`${open} open`} />
         <Summary label="Allocated capital" value={formatCurrency(totals.price)} />
         <Summary label="Projected profit" value={`+${formatCurrency(totals.profit)}`} money />
@@ -93,7 +93,7 @@ export function AssignedOrders({
       ) : loading && !orders ? (
         <div className="space-y-4">
           {Array.from({ length: 2 }).map((_, i) => (
-            <Skeleton key={i} className="h-40 w-full rounded-3xl" />
+            <Skeleton key={i} className="h-40 w-full rounded-card" />
           ))}
         </div>
       ) : list.length === 0 ? (
@@ -128,9 +128,9 @@ export function AssignedOrders({
 function Summary({ label, value, hint, money }: { label: string; value: string; hint?: string; money?: boolean }) {
   return (
     <div className="min-w-0">
-      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-subtle">{label}</p>
-      <p className={cn('mt-1 truncate text-[16px] font-black', money ? 'text-money' : 'text-ink')}>{value}</p>
-      {hint && <p className="text-[11px] font-semibold text-subtle">{hint}</p>}
+      <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-subtle">{label}</p>
+      <p className={cn('mt-1 truncate text-[16px] font-medium', money ? 'text-money' : 'text-ink')}>{value}</p>
+      {hint && <p className="text-[11px] font-medium text-subtle">{hint}</p>}
     </div>
   );
 }
@@ -156,14 +156,14 @@ function OrderItem({
   return (
     <li
       className={cn(
-        'overflow-hidden rounded-3xl border bg-white',
-        editing ? 'border-ink/20' : 'border-black/[0.08]',
-        order.status !== 'completed' && 'border-l-4 border-l-blue-600'
+        'overflow-hidden rounded-card border bg-white',
+        editing ? 'border-ink/20' : 'border-line',
+        order.status !== 'completed' && 'border-l-4 border-l-brand-500'
       )}
     >
       <div className="p-5">
         <div className="flex items-start gap-4">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-black/[0.06]">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-line">
             {order.image ? (
               <Image src={order.image} alt="" width={56} height={56} className="h-full w-full object-cover" />
             ) : (
@@ -171,8 +171,8 @@ function OrderItem({
             )}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[15px] font-black uppercase leading-snug tracking-tight text-ink">{order.title}</p>
-            <p className="mt-1 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-ink/70">
+            <p className="text-[15px] font-medium leading-snug tracking-tight text-ink">{order.title}</p>
+            <p className="mt-1 flex items-center gap-1.5 text-[12px] text-muted">
               <ClockIcon className="h-3.5 w-3.5" />
               Allocated: {formatDateTime(order.assignedAt)}
             </p>
@@ -180,7 +180,7 @@ function OrderItem({
           <div className="flex shrink-0 flex-col items-end gap-2">
             <span
               className={cn(
-                'rounded-full border px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.14em]',
+                'rounded-md border px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.1em]',
                 badge.className
               )}
             >
@@ -212,7 +212,7 @@ function OrderItem({
           </div>
         </div>
 
-        <dl className="mt-4 grid grid-cols-2 gap-4 rounded-2xl border border-black/[0.12] p-4 sm:grid-cols-4">
+        <dl className="mt-4 grid grid-cols-2 gap-4 rounded-xl border border-line p-4 sm:grid-cols-4">
           <Metric label="Price amount" value={formatCurrency(order.price)} />
           <Metric label="Profit % margin" value={`+${order.profitPercentage}%`} />
           <Metric label="Calculated profit" value={`+${formatCurrency(order.profit)}`} money />
@@ -228,8 +228,8 @@ function OrderItem({
 function Metric({ label, value, money }: { label: string; value: string; money?: boolean }) {
   return (
     <div className="min-w-0">
-      <dt className="text-[10px] font-bold uppercase tracking-[0.14em] text-subtle">{label}</dt>
-      <dd className={cn('mt-1 truncate font-mono text-[14px] font-semibold', money ? 'text-money' : 'text-ink')}>
+      <dt className="text-[10px] font-medium uppercase tracking-[0.14em] text-subtle">{label}</dt>
+      <dd className={cn('tabular mt-1 truncate text-[14px] font-medium', money ? 'text-money' : 'text-ink')}>
         {value}
       </dd>
     </div>
@@ -281,8 +281,8 @@ function EditPanel({
   };
 
   return (
-    <div className="border-t border-gold/40 bg-[#fdf6ea] p-5">
-      <p className="text-[12px] font-extrabold uppercase tracking-[0.14em] text-ink">Tuning financial metrics</p>
+    <div className="border-t border-brand-200 bg-brand-50 p-5">
+      <p className="text-[15px] font-medium tracking-tight text-ink">Tuning financial metrics</p>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-3">
         <Stepper
@@ -296,11 +296,11 @@ function EditPanel({
         />
         <Stepper label="Profit percentage (%)" value={percent} onChange={setPercent} step={0.01} min={0} />
         <label className="block">
-          <span className="mb-2 block text-[10px] font-bold uppercase tracking-[0.14em] text-subtle">Current status</span>
+          <span className="mb-2 block text-[10px] font-medium uppercase tracking-[0.14em] text-subtle">Current status</span>
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value as OrderStatus)}
-            className="w-full rounded-xl border border-black/15 bg-white px-3 py-2.5 text-[13px] font-extrabold uppercase text-ink focus:border-black focus:outline-none"
+            className="w-full rounded-xl border border-line bg-white px-3 py-2.5 text-[13px] font-medium text-ink focus:border-brand-400 focus:outline-none"
           >
             {STATUS_ORDER.slice(from).map((s) => (
               <option key={s} value={s}>
@@ -312,7 +312,7 @@ function EditPanel({
       </div>
 
       {(debit !== null || credit !== null) && (
-        <p className="mt-4 rounded-xl bg-white/70 px-4 py-3 text-[12px] font-semibold text-ink/80">
+        <p className="mt-4 rounded-xl bg-white/70 px-4 py-3 text-[12px] font-medium text-ink/80">
           Applying settles this through the member’s ledger:
           {debit !== null && <> debits <b>{formatCurrency(debit)}</b> (purchase)</>}
           {debit !== null && credit !== null && ', then'}
@@ -327,7 +327,7 @@ function EditPanel({
       )}
 
       <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-subtle">
+        <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-subtle">
           {preview ? (
             <>
               Calculated preview: profit is <span className="text-money">{formatCurrency(preview.profit)}</span> • total
@@ -378,11 +378,11 @@ function Stepper({
     onChange(String(Math.round(next * 1000) / 1000));
   };
   const btn =
-    'px-3 text-[18px] font-semibold text-ink/60 transition-colors hover:text-ink disabled:cursor-not-allowed disabled:opacity-40';
+    'px-3 text-[18px] font-medium text-ink/60 transition-colors hover:text-ink disabled:cursor-not-allowed disabled:opacity-40';
   return (
     <label className="block">
-      <span className="mb-2 block text-[10px] font-bold uppercase tracking-[0.14em] text-subtle">{label}</span>
-      <span className="flex items-stretch rounded-xl border border-black/15 bg-white">
+      <span className="mb-2 block text-[10px] font-medium uppercase tracking-[0.14em] text-subtle">{label}</span>
+      <span className="flex items-stretch rounded-xl border border-line bg-white">
         <button type="button" className={btn} disabled={disabled} onClick={() => bump(-1)} aria-label="Decrease">
           −
         </button>
@@ -394,7 +394,7 @@ function Stepper({
           step={step}
           disabled={disabled}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full min-w-0 border-x border-black/10 bg-transparent px-3 py-2.5 font-mono text-[14px] font-semibold text-ink focus:outline-none disabled:opacity-60"
+          className="w-full min-w-0 border-x border-line bg-transparent px-3 py-2.5 tabular text-[14px] font-medium text-ink focus:outline-none disabled:opacity-60"
         />
         <button type="button" className={btn} disabled={disabled} onClick={() => bump(1)} aria-label="Increase">
           +

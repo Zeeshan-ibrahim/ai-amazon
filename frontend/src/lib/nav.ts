@@ -45,12 +45,12 @@ export const adminNavItems: {
   { slug: 'sub-admins', label: 'Sub-admins', title: 'Sub-admins', icon: CrownIcon, built: true, only: 'super_admin' },
   { slug: 'products', label: 'Products', title: 'Products', icon: BagIcon, built: true },
   { slug: 'plans', label: 'Plans', title: 'Plans', icon: ShieldIcon, built: true },
-  { slug: 'plan-requests', label: 'Plan Req', title: 'Plan Requests', icon: SwapIcon, built: true },
+  { slug: 'plan-requests', label: 'Plan requests', title: 'Plan Requests', icon: SwapIcon, built: true },
   { slug: 'financials', label: 'Financials', title: 'Financials', icon: SwapIcon, built: true },
   { slug: 'balance', label: 'My Balance', title: 'My Balance', icon: WalletIcon, built: true, only: 'sub_admin' },
   { slug: 'banners', label: 'Banners', title: 'Banners', icon: ImageIcon, built: true, only: 'super_admin' },
   { slug: 'wallets', label: 'Wallets', title: 'Wallets & Support', icon: WalletIcon, built: true, only: 'super_admin' },
-  { slug: 'account', label: 'My Acc', title: 'Group Overview', icon: UserIcon, built: true },
+  { slug: 'account', label: 'My account', title: 'Group Overview', icon: UserIcon, built: true },
 ];
 
 /** The sections a role may open. */

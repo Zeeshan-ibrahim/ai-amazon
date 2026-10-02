@@ -31,19 +31,19 @@ export default function PlanRequestsPage() {
   };
 
   return (
-    <div className="space-y-8">
-      <header className="flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
+    <div className="space-y-6 lg:space-y-8">
+      <header className="flex flex-col gap-5 border-b border-line pb-6 xl:flex-row xl:items-center xl:justify-between">
         <div>
-          <h1 className="text-[32px] font-black uppercase leading-none tracking-tight text-ink sm:text-[40px]">
+          <h1 className="text-[26px] font-medium leading-tight tracking-tight text-ink lg:text-[30px]">
             Plan requests
           </h1>
-          <p className="mt-3 max-w-xs text-[12px] font-bold uppercase leading-relaxed tracking-[0.18em] text-subtle">
+          <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-muted">
             Review member plan activations
           </p>
         </div>
 
         <div
-          className="flex rounded-3xl border border-black/[0.05] bg-white p-2 shadow-[0_12px_30px_-24px_rgba(0,0,0,0.4)]"
+          className="flex rounded-xl border border-line bg-white p-1.5 shadow-card"
           role="tablist"
           aria-label="Request status"
         >
@@ -59,18 +59,18 @@ export default function PlanRequestsPage() {
       {list.error ? (
         <ErrorState message={list.error} onRetry={list.reload} />
       ) : list.loading ? (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {Array.from({ length: 2 }).map((_, i) => (
-            <Skeleton key={i} className="h-80 w-full rounded-[32px]" />
+            <Skeleton key={i} className="h-64 w-full rounded-card" />
           ))}
         </div>
       ) : list.items.length === 0 ? (
         <EmptyState
-          className="border-black/10 bg-white"
+          className="bg-white"
           title={scope === 'active' ? 'No plan requests waiting for review.' : 'No reviewed plan requests yet.'}
         />
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {list.items.map((request) => (
             <PlanRequestCard key={request.id} request={request} onReviewed={onReviewed} />
           ))}

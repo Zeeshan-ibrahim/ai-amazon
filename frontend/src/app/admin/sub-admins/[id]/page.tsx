@@ -58,28 +58,28 @@ export default function SubAdminPage() {
   };
 
   return (
-    <div className="space-y-8">
-      <header className="flex flex-col gap-6 border-b border-black/[0.06] pb-7 lg:flex-row lg:items-center lg:justify-between">
+    <div className="space-y-6 lg:space-y-8">
+      <header className="flex flex-col gap-6 border-b border-line pb-6 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
           <Link
             href="/admin/sub-admins"
-            className="inline-flex w-fit shrink-0 items-center gap-3 whitespace-nowrap rounded-2xl bg-[#1c1c1c] px-6 py-4 text-[12px] font-extrabold uppercase tracking-[0.14em] text-gold shadow-[0_12px_24px_-14px_rgba(0,0,0,0.8)] transition-colors hover:bg-black"
+            className="inline-flex h-9 w-fit shrink-0 items-center gap-2 whitespace-nowrap rounded-xl border border-line bg-white px-3.5 text-[13px] font-medium text-ink transition-colors hover:border-ink/25 hover:bg-cream"
           >
             <ChevronLeftIcon className="h-4 w-4" />
             Back
           </Link>
-          <span aria-hidden className="hidden h-12 w-px bg-black/10 sm:block" />
+          <span aria-hidden className="hidden h-10 w-px bg-line sm:block" />
           <div className="flex min-w-0 items-center gap-4">
             <MemberInitial name={subAdmin.displayName} size="lg" />
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-3">
-                <h1 className="truncate text-[24px] font-black uppercase tracking-tight text-ink sm:text-[28px]">
+                <h1 className="truncate text-[24px] font-medium tracking-tight text-ink lg:text-[28px]">
                   {subAdmin.displayName}
                 </h1>
                 <RoleBadge role={subAdmin.role} />
                 <AccountStatusBadge status={subAdmin.status} />
               </div>
-              <p className="mt-1 text-[12px] font-bold uppercase tracking-[0.14em] text-subtle sm:text-[13px]">
+              <p className="mt-1 text-[13px] text-muted">
                 {subAdmin.loginEmail} • Ref {subAdmin.inviteCode}
               </p>
             </div>
@@ -88,12 +88,12 @@ export default function SubAdminPage() {
         <div className="flex flex-col gap-3 sm:flex-row">
           <Link
             href={`/admin/members/${subAdmin.id}`}
-            className="inline-flex items-center justify-center gap-2.5 whitespace-nowrap rounded-2xl border border-black/15 bg-white px-6 py-3.5 text-[12px] font-extrabold uppercase tracking-[0.14em] text-ink transition-colors hover:border-black/40"
+            className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-line bg-white px-5 text-sm font-medium text-ink transition-colors hover:border-ink/25 hover:bg-cream"
           >
-            <EditIcon className="h-5 w-5" />
+            <EditIcon className="h-[18px] w-[18px]" />
             Edit account
           </Link>
-          <AdminButton variant="danger" loading={deleting} onClick={remove} icon={<TrashIcon className="h-5 w-5" />}>
+          <AdminButton variant="danger" loading={deleting} onClick={remove} icon={<TrashIcon className="h-[18px] w-[18px]" />}>
             Delete
           </AdminButton>
         </div>
@@ -113,7 +113,7 @@ export default function SubAdminPage() {
             stats.pendingRequests > 0 && (
               <Link
                 href={`/admin/members/${subAdmin.id}`}
-                className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-ink underline underline-offset-4"
+                className="text-[13px] font-medium text-brand-600 hover:underline"
               >
                 Review in Ledger
               </Link>
@@ -126,19 +126,19 @@ export default function SubAdminPage() {
         {members.items.length === 0 ? (
           <EmptyState title="No members yet." />
         ) : (
-          <ul className="divide-y divide-black/[0.06]">
+          <ul className="divide-y divide-line">
             {members.items.map((member) => (
               <li key={member.id} className="flex items-center justify-between gap-4 py-4">
                 <Link href={`/admin/members/${member.id}`} className="flex min-w-0 items-center gap-4 hover:underline">
                   <MemberInitial name={member.displayName} />
                   <span className="min-w-0">
-                    <span className="block truncate text-[15px] font-black uppercase tracking-tight text-ink">
+                    <span className="block truncate text-[15px] font-medium tracking-tight text-ink">
                       {member.displayName}
                     </span>
                     <span className="block truncate text-[13px] text-subtle">{member.loginEmail}</span>
                   </span>
                 </Link>
-                <span className="shrink-0 font-mono text-[15px] font-bold text-ink">{formatCurrency(member.balance)}</span>
+                <span className="tabular shrink-0 text-[15px] font-medium text-ink">{formatCurrency(member.balance)}</span>
               </li>
             ))}
           </ul>
@@ -155,7 +155,7 @@ export default function SubAdminPage() {
           {plans.length === 0 ? (
             <EmptyState title="No plans yet." />
           ) : (
-            <ul className="divide-y divide-black/[0.06]">
+            <ul className="divide-y divide-line">
               {plans.map((plan) => (
                 <Row key={plan.id} title={plan.name} meta={plan.tag} value={`${formatCurrency(plan.price)} USDT`} />
               ))}
@@ -166,7 +166,7 @@ export default function SubAdminPage() {
           {products.items.length === 0 ? (
             <EmptyState title="No products yet." />
           ) : (
-            <ul className="divide-y divide-black/[0.06]">
+            <ul className="divide-y divide-line">
               {products.items.map((product) => (
                 <Row
                   key={product.id}
@@ -191,7 +191,7 @@ export default function SubAdminPage() {
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <AdminCard>
-      <h2 className="mb-4 text-[13px] font-extrabold uppercase tracking-[0.16em] text-subtle">{title}</h2>
+      <h2 className="mb-2 text-lg font-medium tracking-tight text-ink">{title}</h2>
       {children}
     </AdminCard>
   );
@@ -201,10 +201,10 @@ function Row({ title, meta, value }: { title: string; meta: string; value: strin
   return (
     <li className="flex items-center justify-between gap-4 py-4">
       <span className="min-w-0">
-        <span className="block truncate text-[14px] font-black uppercase tracking-tight text-ink">{title}</span>
+        <span className="block truncate text-[14px] font-medium tracking-tight text-ink">{title}</span>
         {meta && <span className="block truncate text-[12px] text-subtle">{meta}</span>}
       </span>
-      <span className="shrink-0 font-mono text-[14px] font-bold text-ink">{value}</span>
+      <span className="tabular shrink-0 text-[14px] font-medium text-ink">{value}</span>
     </li>
   );
 }
@@ -223,12 +223,12 @@ function Stat({
   return (
     <div
       className={cn(
-        'rounded-3xl border bg-white p-5',
-        highlight ? 'border-gold/60 shadow-[0_10px_28px_-18px_rgba(217,180,90,0.9)]' : 'border-black/[0.07]'
+        'rounded-card border bg-white p-5',
+        highlight ? 'border-brand-300 shadow-card' : 'border-line'
       )}
     >
-      <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-subtle">{label}</p>
-      <p className="mt-2 font-mono text-[22px] font-bold text-ink">{value}</p>
+      <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-subtle">{label}</p>
+      <p className="mt-2 tabular text-[22px] font-medium tracking-tight text-ink">{value}</p>
       {action && <div className="mt-2">{action}</div>}
     </div>
   );

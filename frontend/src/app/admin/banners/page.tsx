@@ -39,15 +39,14 @@ export default function BannersPage() {
   const banners = data ?? [];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 lg:space-y-8">
       <AdminPageHeader
         title="Banners"
         subtitle="Control group promotional assets"
         actions={
           <AdminButton
             onClick={() => setEditor({ open: true, banner: null })}
-            icon={<PlusIcon className="h-5 w-5" />}
-            className="py-4"
+            icon={<PlusIcon className="h-[18px] w-[18px]" />}
           >
             Add banner
           </AdminButton>
@@ -61,12 +60,11 @@ export default function BannersPage() {
       ) : loading && !data ? (
         <BannerGrid>
           {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-[360px] rounded-[36px]" />
+            <Skeleton key={i} className="h-[360px] rounded-card" />
           ))}
         </BannerGrid>
       ) : banners.length === 0 ? (
         <EmptyState
-          className="border-black/10"
           title="No banners yet."
           hint="Add one to show it on every member's dashboard."
         />
@@ -98,7 +96,7 @@ export default function BannersPage() {
 }
 
 function BannerGrid({ children }: { children: ReactNode }) {
-  return <div className="grid gap-6 md:grid-cols-2 xl:gap-8">{children}</div>;
+  return <div className="grid gap-4 md:grid-cols-2 lg:gap-5">{children}</div>;
 }
 
 function BannerCard({
@@ -113,8 +111,8 @@ function BannerCard({
   onDelete: () => void;
 }) {
   return (
-    <article className="group flex flex-col overflow-hidden rounded-[36px] border border-black/[0.07] bg-white shadow-[0_18px_40px_-28px_rgba(0,0,0,0.25)] transition-colors hover:bg-black/[0.03]">
-      <div className="relative aspect-[16/9] bg-[#f7f7f7]">
+    <article className="group flex flex-col overflow-hidden rounded-card border border-line bg-white shadow-card transition-colors hover:border-ink/15">
+      <div className="relative aspect-[16/9] bg-cream">
         {banner.image ? (
           // Plain <img>: admins paste images from any host, which next/image won't allow.
           <img
@@ -126,7 +124,7 @@ function BannerCard({
           />
         ) : (
           <div className="flex h-full items-center justify-center text-black/15">
-            <ImageIcon className="h-16 w-16" />
+            <ImageIcon className="h-12 w-12" />
           </div>
         )}
         {/* Always visible on touch screens; revealed on hover or keyboard focus on desktop. */}
@@ -135,34 +133,34 @@ function BannerCard({
             type="button"
             onClick={onEdit}
             aria-label={`Edit ${banner.title}`}
-            className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-white/85 text-ink backdrop-blur transition-colors hover:bg-white"
+            className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-ink backdrop-blur transition-colors hover:bg-white"
           >
-            <EditIcon className="h-6 w-6" />
+            <EditIcon className="h-5 w-5" />
           </button>
           <button
             type="button"
             onClick={onDelete}
             disabled={deleting}
             aria-label={`Delete ${banner.title}`}
-            className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-white/85 text-dangerSoft backdrop-blur transition-colors hover:bg-white disabled:opacity-60"
+            className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-dangerSoft backdrop-blur transition-colors hover:bg-white disabled:opacity-60"
           >
             {deleting ? (
               <span className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
             ) : (
-              <TrashIcon className="h-6 w-6" />
+              <TrashIcon className="h-5 w-5" />
             )}
           </button>
         </div>
       </div>
 
-      <div className="px-8 pb-8 pt-7">
-        <h2 title={banner.title} className="truncate text-[20px] font-black uppercase tracking-tight text-ink">
+      <div className="p-5 sm:p-6">
+        <h2 title={banner.title} className="truncate text-lg font-medium tracking-tight text-ink">
           {banner.title}
         </h2>
         {banner.description && (
           <p
             title={banner.description}
-            className="mt-1.5 truncate text-[12px] font-bold uppercase tracking-[0.16em] text-subtle"
+            className="mt-1.5 truncate text-[10px] font-medium uppercase tracking-[0.14em] text-subtle"
           >
             {banner.description}
           </p>

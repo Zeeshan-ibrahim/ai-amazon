@@ -83,9 +83,9 @@ export function ParticularsTab({
   };
 
   return (
-    <AdminCard className="sm:p-9">
-      <form onSubmit={onSubmit} className="space-y-7" noValidate>
-        <div className="grid gap-7 sm:grid-cols-2">
+    <AdminCard>
+      <form onSubmit={onSubmit} className="space-y-5" noValidate>
+        <div className="grid gap-5 sm:grid-cols-2">
           <AdminInput label="First name" value={form.firstName} onChange={(e) => set('firstName')(e.target.value)} />
           <AdminInput label="Last name" value={form.lastName} onChange={(e) => set('lastName')(e.target.value)} />
           <AdminInput
@@ -113,7 +113,7 @@ export function ParticularsTab({
         />
 
         {isSuperAdmin && (
-          <div className="grid gap-7 sm:grid-cols-2">
+          <div className="grid gap-5 sm:grid-cols-2">
             <AdminSelect
               label="Administrative role"
               value={form.role}
@@ -168,7 +168,7 @@ export function ParticularsTab({
           </Notice>
         )}
 
-        <div className="grid gap-7 sm:grid-cols-2">
+        <div className="grid gap-5 sm:grid-cols-2">
           <AdminInput
             label="Withdrawal limit (USD)"
             type="number"

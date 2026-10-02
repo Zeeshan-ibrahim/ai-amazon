@@ -75,7 +75,7 @@ export function OrdersTab({
     );
 
   return (
-    <AdminCard className="grid gap-7 sm:p-9 xl:grid-cols-2 xl:items-start">
+    <AdminCard className="grid gap-6 xl:grid-cols-2 xl:items-start">
       {!member.hasApprovedDeposit && (
         <div className="xl:col-span-2">
           <Notice tone="warn">
@@ -83,7 +83,7 @@ export function OrdersTab({
             <button
               type="button"
               onClick={onGoToLedger}
-              className="font-bold underline underline-offset-2"
+              className="font-medium underline underline-offset-2"
             >
               Review their ledger
             </button>
@@ -91,12 +91,12 @@ export function OrdersTab({
         </div>
       )}
 
-      <div className="min-w-0 space-y-7">
-        <div className="rounded-[28px] border-2 border-ink bg-[#fafafa] p-5 sm:p-8">
-          <span className="inline-block rounded-full bg-black px-5 py-1.5 text-[12px] font-extrabold uppercase tracking-[0.16em] text-gold">
+      <div className="min-w-0 space-y-5">
+        <div className="rounded-card border border-line bg-cream p-5 sm:p-6">
+          <span className="inline-block rounded-md bg-brand-500 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.1em] text-white">
             Allocation hub
           </span>
-          <h2 className="mt-5 text-[20px] font-black uppercase tracking-tight text-ink">
+          <h2 className="mt-4 text-xl font-medium tracking-tight text-ink">
             Find &amp; assign contracts
           </h2>
           <p className="mt-1 text-[14px] text-muted">
@@ -112,7 +112,7 @@ export function OrdersTab({
             className="mt-6"
           />
 
-          <p className="mt-6 text-[11px] font-bold uppercase tracking-[0.16em] text-subtle">
+          <p className="mt-6 text-[10px] font-medium uppercase tracking-[0.14em] text-subtle">
             Quick price segments
           </p>
           <div className="mt-3 flex flex-wrap gap-2.5">
@@ -123,10 +123,10 @@ export function OrdersTab({
                 aria-pressed={segmentId === s.id}
                 onClick={() => setSegmentId(s.id)}
                 className={cn(
-                  'rounded-xl px-5 py-2.5 text-[14px] font-bold transition-colors',
+                  'rounded-lg border px-3.5 py-1.5 text-[13px] transition-colors',
                   segmentId === s.id
-                    ? 'bg-black text-white'
-                    : 'border border-black/10 bg-white text-ink hover:border-black/30'
+                    ? 'border-ink bg-ink font-medium text-white'
+                    : 'border-line bg-white text-muted hover:text-ink'
                 )}
               >
                 {s.label}
@@ -135,13 +135,13 @@ export function OrdersTab({
           </div>
         </div>
 
-        <div className="rounded-[28px] border border-black/[0.07] p-4 sm:p-7">
-          <div className="flex items-center justify-between gap-3 border-b border-black/[0.06] pb-5">
-            <p className="flex items-center gap-3 text-[13px] font-extrabold uppercase tracking-[0.16em] text-subtle">
-              <LayersIcon className="h-5 w-5" />
+        <div className="rounded-card border border-line p-4 sm:p-5">
+          <div className="flex items-center justify-between gap-3 border-b border-line pb-5">
+            <p className="flex items-center gap-2 text-[15px] font-medium text-ink">
+              <LayersIcon className="h-[18px] w-[18px] text-muted" />
               Available contracts
             </p>
-            <span className="rounded-full bg-black/[0.04] px-4 py-1.5 text-[13px] font-bold text-ink">
+            <span className="rounded-md bg-black/5 px-2.5 py-1 text-[12px] font-medium text-muted">
               {formatNumber(list.total)} entries
             </span>
           </div>
@@ -159,7 +159,7 @@ export function OrdersTab({
           ) : list.loading ? (
             <div className="mt-5 space-y-4">
               {Array.from({ length: 3 }).map((_, i) => (
-                <Skeleton key={i} className="h-24 w-full rounded-3xl" />
+                <Skeleton key={i} className="h-24 w-full rounded-card" />
               ))}
             </div>
           ) : list.items.length === 0 ? (
@@ -219,13 +219,13 @@ function ContractRow({
   return (
     <li
       className={cn(
-        'flex items-center gap-4 rounded-3xl p-4 sm:gap-5 sm:p-5',
+        'flex items-center gap-4 rounded-card p-4 sm:gap-5 sm:p-5',
         product.assigned
-          ? 'border-2 border-ink bg-[#fafafa]'
-          : 'border border-black/[0.08] bg-white'
+          ? 'border border-brand-300 bg-brand-50/60'
+          : 'border border-line bg-white'
       )}
     >
-      <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-black/[0.06] bg-white sm:h-20 sm:w-20">
+      <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-line bg-white sm:h-16 sm:w-16">
         {product.image ? (
           <Image
             src={product.image}
@@ -235,23 +235,23 @@ function ContractRow({
             className="h-full w-full object-cover"
           />
         ) : (
-          <BoxIcon className="h-8 w-8 text-subtle" />
+          <BoxIcon className="h-6 w-6 text-subtle" />
         )}
       </div>
 
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[15px] font-black uppercase tracking-tight text-ink sm:text-[17px]">
+        <p className="truncate text-[15px] font-medium tracking-tight text-ink">
           {product.title}
         </p>
-        <p className="mt-1 font-mono text-[13px] font-semibold sm:text-[14px]">
+        <p className="tabular mt-1 text-[13px] font-medium sm:text-[14px]">
           <span className="text-ink/70">{formatCurrency(product.price)}</span>
-          <span className="mx-2 text-gold">•</span>
+          <span className="mx-2 text-subtle">•</span>
           <span className="text-money">+{product.profitPercentage}% Profit</span>
         </p>
       </div>
 
       {product.assigned ? (
-        <span className="inline-flex shrink-0 items-center gap-2 rounded-2xl border border-money/20 bg-money/5 px-4 py-3 text-[12px] font-extrabold uppercase tracking-[0.14em] text-money sm:px-6">
+        <span className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl border border-brand-200 bg-brand-50 px-3.5 text-[13px] font-medium text-brand-600">
           <CheckIcon className="h-4 w-4" />
           Assigned
         </span>
@@ -260,7 +260,7 @@ function ContractRow({
           type="button"
           onClick={onAssign}
           disabled={disabled}
-          className="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-black px-5 py-3.5 text-[12px] font-extrabold uppercase tracking-[0.16em] text-white shadow-[0_10px_20px_-12px_rgba(0,0,0,0.8)] transition-colors hover:bg-black/85 disabled:cursor-not-allowed disabled:bg-black/55 sm:px-9"
+          className="inline-flex h-9 shrink-0 items-center gap-2 rounded-xl bg-ink px-4 text-[13px] font-medium text-white transition-colors hover:bg-black/85 disabled:cursor-not-allowed disabled:bg-ink/40"
         >
           {assigning && (
             <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />

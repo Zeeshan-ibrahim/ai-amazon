@@ -17,8 +17,8 @@ import type { FinancialRequest } from '@/lib/types';
 import { ReceiptViewer } from './ReceiptViewer';
 
 const STATUS_STYLES: Record<FinancialRequest['status'], string> = {
-  PENDING: 'bg-black/[0.04] text-ink',
-  COMPLETED: 'bg-black text-gold',
+  PENDING: 'bg-black/5 text-muted',
+  COMPLETED: 'bg-brand-50 text-brand-600',
   REJECTED: 'bg-dangerSoft/10 text-dangerSoft',
 };
 
@@ -49,39 +49,39 @@ export function RequestCard({
   };
 
   return (
-    <article className="rounded-[32px] border border-black/[0.07] bg-white p-5 shadow-[0_18px_40px_-28px_rgba(0,0,0,0.25)] sm:p-8">
+    <article className="rounded-card border border-line bg-surface p-5 shadow-card sm:p-6">
       <header className="flex items-center gap-5">
-        <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-black text-gold sm:h-[72px] sm:w-[72px]">
-          <Arrow className="h-7 w-7" />
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
+          <Arrow className="h-5 w-5" />
         </span>
         <div className="min-w-0">
           <p className="flex min-w-0 flex-wrap items-baseline gap-x-2">
             <Link
               href={`/admin/members/${request.member.id}`}
-              className="truncate text-[18px] font-black uppercase tracking-tight text-ink hover:underline sm:text-[20px]"
+              className="truncate text-[17px] font-medium tracking-tight text-ink hover:underline"
             >
               {request.member.displayName}
             </Link>
-            <span className="truncate text-[12px] font-bold uppercase tracking-[0.12em] text-subtle">
+            <span className="truncate text-[13px] text-subtle">
               • {request.member.email}
             </span>
           </p>
           {request.member.role === 'sub_admin' && (
             <p className="mt-2">
               <RoleBadge role="sub_admin" />
-              <span className="ml-2 text-[12px] font-bold uppercase tracking-[0.12em] text-subtle">
+              <span className="ml-2 text-[10px] font-medium uppercase tracking-[0.14em] text-subtle">
                 Own balance request
               </span>
             </p>
           )}
           <div className="mt-2 flex flex-wrap items-center gap-3">
-            <span className="flex items-center gap-1.5 text-[13px] font-bold tracking-[0.1em] text-subtle">
+            <span className="flex items-center gap-1.5 text-[13px] text-subtle">
               <ClockIcon className="h-4 w-4" />
               {formatDate(request.createdAt)}
             </span>
             <span
               className={cn(
-                'rounded-lg px-3 py-1 text-[12px] font-extrabold uppercase tracking-[0.14em]',
+                'rounded-md px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.1em]',
                 STATUS_STYLES[request.status]
               )}
             >
@@ -91,8 +91,8 @@ export function RequestCard({
         </div>
       </header>
 
-      <p className="mt-7 text-[11px] font-bold uppercase tracking-[0.16em] text-subtle">Amount</p>
-      <p className="mt-1 text-[28px] font-black tracking-tight text-ink sm:text-[32px]">
+      <p className="mt-6 text-[10px] font-medium uppercase tracking-[0.14em] text-subtle">Amount</p>
+      <p className="mt-1 tabular text-[26px] font-medium tracking-tight text-ink sm:text-[28px]">
         {formatCurrency(request.amount)}
       </p>
 
@@ -102,7 +102,7 @@ export function RequestCard({
             type="button"
             disabled={busy !== null}
             onClick={() => review('approve')}
-            className="flex items-center justify-center gap-3 rounded-2xl bg-black px-6 py-4 text-[13px] font-extrabold uppercase tracking-[0.16em] text-gold shadow-[0_14px_28px_-16px_rgba(0,0,0,0.9)] transition-colors hover:bg-black/85 disabled:opacity-60"
+            className="flex h-11 items-center justify-center gap-2 rounded-xl bg-ink px-5 text-sm font-medium text-white transition-colors hover:bg-black/85 disabled:opacity-60"
           >
             {busy === 'approve' ? (
               <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
@@ -115,7 +115,7 @@ export function RequestCard({
             type="button"
             disabled={busy !== null}
             onClick={() => review('reject')}
-            className="flex items-center justify-center gap-3 rounded-2xl border border-black/[0.05] bg-[#fafafa] px-6 py-4 text-[13px] font-extrabold uppercase tracking-[0.16em] text-subtle transition-colors hover:text-dangerSoft disabled:opacity-60"
+            className="flex h-11 items-center justify-center gap-2 rounded-xl border border-line bg-white px-5 text-sm font-medium text-muted transition-colors hover:border-dangerSoft/30 hover:text-dangerSoft disabled:opacity-60"
           >
             {busy === 'reject' ? (
               <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
@@ -133,25 +133,25 @@ export function RequestCard({
         </div>
       )}
 
-      <div className="mt-6 rounded-3xl border border-black/[0.05] bg-[#fafafa] p-5 sm:p-7">
+      <div className="mt-6 rounded-xl bg-[#F4F3EE] p-4 sm:p-5">
         <dl className="flex flex-wrap gap-x-10 gap-y-5">
           <div>
-            <dt className="text-[11px] font-bold uppercase tracking-[0.16em] text-subtle">Coin</dt>
-            <dd className="mt-2 text-[17px] font-black text-ink">{request.coin ?? '—'}</dd>
+            <dt className="text-[10px] font-medium uppercase tracking-[0.14em] text-subtle">Coin</dt>
+            <dd className="mt-2 text-[17px] font-medium text-ink">{request.coin ?? '—'}</dd>
           </div>
           <div>
-            <dt className="text-[11px] font-bold uppercase tracking-[0.16em] text-subtle">Network</dt>
+            <dt className="text-[10px] font-medium uppercase tracking-[0.14em] text-subtle">Network</dt>
             <dd className="mt-2">
-              <span className="rounded-lg bg-black/[0.07] px-2.5 py-1 font-mono text-[12px] font-bold tracking-[0.1em] text-ink/70">
+              <span className="rounded-lg bg-black/[0.07] px-2.5 py-1 font-mono text-[12px] font-medium text-ink/70">
                 {request.network ?? '—'}
               </span>
             </dd>
           </div>
           <div className="min-w-0 flex-1 basis-64">
-            <dt className="text-[11px] font-bold uppercase tracking-[0.16em] text-subtle">
+            <dt className="text-[10px] font-medium uppercase tracking-[0.14em] text-subtle">
               {isDeposit ? 'Receipt wallet address' : 'Destination wallet address'}
             </dt>
-            <dd className="mt-2 break-all font-mono text-[14px] font-semibold text-ink sm:text-[15px]">
+            <dd className="mt-2 break-all font-mono text-[14px] font-medium text-ink sm:text-[15px]">
               {request.address ?? '—'}
             </dd>
           </div>
@@ -161,7 +161,7 @@ export function RequestCard({
           <button
             type="button"
             onClick={() => setViewing(true)}
-            className="mt-6 rounded-2xl bg-[#1c1c1c] px-7 py-4 text-[12px] font-extrabold uppercase tracking-[0.16em] text-gold transition-colors hover:bg-black"
+            className="mt-6 inline-flex h-9 items-center rounded-xl border border-line bg-white px-3.5 text-[13px] font-medium text-ink transition-colors hover:border-ink/25 hover:bg-cream"
           >
             View screenshot
           </button>

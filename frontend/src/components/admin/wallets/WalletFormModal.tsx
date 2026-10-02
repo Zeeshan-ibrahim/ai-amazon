@@ -78,7 +78,7 @@ export function WalletFormModal({
           onChange={(e) => set('address')(e.target.value)}
         />
         {error && <Notice tone="error">{error}</Notice>}
-        <AdminButton type="submit" size="lg" loading={saving} className="w-full rounded-[22px] tracking-[0.2em]">
+        <AdminButton type="submit" size="lg" loading={saving} className="w-full">
           Save wallet
         </AdminButton>
       </form>

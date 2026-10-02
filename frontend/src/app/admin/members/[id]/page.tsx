@@ -45,21 +45,21 @@ export default function MemberPage() {
   }
 
   return (
-    <div className="space-y-8">
-      <header className="flex flex-col gap-6 border-b border-black/[0.06] pb-7 sm:flex-row sm:items-center">
+    <div className="space-y-6 lg:space-y-8">
+      <header className="flex flex-col gap-6 border-b border-line pb-6 sm:flex-row sm:items-center">
         <Link
           href="/admin/members"
-          className="inline-flex w-fit items-center gap-3 rounded-2xl bg-[#1c1c1c] px-6 py-4 text-[12px] font-extrabold uppercase tracking-[0.14em] text-gold shadow-[0_12px_24px_-14px_rgba(0,0,0,0.8)] transition-colors hover:bg-black"
+          className="inline-flex h-9 w-fit items-center gap-2 rounded-xl border border-line bg-white px-3.5 text-[13px] font-medium text-ink transition-colors hover:border-ink/25 hover:bg-cream"
         >
           <ChevronLeftIcon className="h-4 w-4" />
           Back to members
         </Link>
-        <span aria-hidden className="hidden h-12 w-px bg-black/10 sm:block" />
+        <span aria-hidden className="hidden h-10 w-px bg-line sm:block" />
         <div className="flex min-w-0 items-center gap-4">
           <MemberInitial name={member.displayName} size="lg" />
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-3">
-              <h1 className="truncate text-[24px] font-black uppercase tracking-tight text-ink sm:text-[28px]">
+              <h1 className="truncate text-[24px] font-medium tracking-tight text-ink lg:text-[28px]">
                 {member.displayName}
               </h1>
               <RoleBadge role={member.role} outlined />
@@ -67,7 +67,7 @@ export default function MemberPage() {
                 <AddedByBadge addedBy={member.addedBy} />
               )}
             </div>
-            <p className="mt-1 text-[12px] font-bold uppercase tracking-[0.14em] text-subtle sm:text-[13px]">
+            <p className="mt-1 text-[13px] text-muted">
               Audit ref: {member.inviteCode} • Balance: {formatCurrency(member.balance)}
             </p>
           </div>
@@ -77,7 +77,7 @@ export default function MemberPage() {
       <nav
         role="tablist"
         aria-label="Member sections"
-        className="flex overflow-x-auto border-b-[1.5px] border-ink"
+        className="flex gap-5 overflow-x-auto border-b border-line sm:gap-7"
       >
         {TABS.map(({ id: tabId, label, icon: Icon }) => (
           <button
@@ -87,13 +87,13 @@ export default function MemberPage() {
             aria-selected={tab === tabId}
             onClick={() => setTab(tabId)}
             className={cn(
-              '-mb-[1.5px] flex shrink-0 items-center gap-3 border-b-[3px] px-6 py-4 text-[13px] font-extrabold uppercase tracking-[0.16em] transition-colors sm:px-9',
+              '-mb-px flex shrink-0 items-center gap-2 border-b-2 pb-3 text-[15px] transition-colors',
               tab === tabId
-                ? 'border-ink text-ink'
-                : 'border-transparent text-ink/60 hover:text-ink'
+                ? 'border-ink font-medium text-ink'
+                : 'border-transparent text-muted hover:text-ink'
             )}
           >
-            <Icon className="h-5 w-5" />
+            <Icon className="h-[18px] w-[18px]" />
             {label}
           </button>
         ))}

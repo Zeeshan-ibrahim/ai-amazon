@@ -129,7 +129,7 @@ export function ProductFormModal({
           onChange={(e) => set('description')(e.target.value)}
         />
         {error && <Notice tone="error">{error}</Notice>}
-        <AdminButton type="submit" size="lg" loading={saving} className="w-full rounded-[22px] tracking-[0.2em]">
+        <AdminButton type="submit" size="lg" loading={saving} className="w-full">
           {editing ? 'Update product' : 'Create product'}
         </AdminButton>
       </form>

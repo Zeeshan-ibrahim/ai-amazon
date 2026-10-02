@@ -3,6 +3,10 @@
 Tokens live in `frontend/tailwind.config.ts`. Use the named utilities rather
 than raw hex values so a palette change stays a one-file edit.
 
+The member app and the admin portal (sub-admin and super-admin) share this
+language. Admin screens build on the primitives in
+`components/admin/ui.tsx`, which are styled with the same tokens.
+
 ## Color
 
 | Token | Value | Used for |

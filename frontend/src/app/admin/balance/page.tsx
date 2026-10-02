@@ -37,16 +37,16 @@ export default function BalancePage() {
   const pending = data.transactions.filter((t) => t.status === 'PENDING');
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 lg:space-y-8">
       <AdminPageHeader title="My balance" subtitle="Deposits and withdrawals are approved by a super-admin" />
 
-      <section className="flex flex-col gap-2 rounded-[40px] bg-black px-8 py-9 shadow-[0_24px_48px_-28px_rgba(0,0,0,0.9)] sm:px-12 sm:py-11">
-        <p className="text-[13px] font-extrabold uppercase tracking-[0.16em] text-gold">Available balance</p>
-        <p className="break-words text-[40px] font-black leading-tight tracking-tight text-white sm:text-[52px]">
+      <section className="flex flex-col gap-2 rounded-card bg-balance-veil p-5 text-white shadow-panel sm:p-6">
+        <p className="text-[11px] font-medium uppercase tracking-[0.1em] text-brand-300">Available balance</p>
+        <p className="tabular mt-2 break-words text-[44px] font-medium leading-none tracking-tight sm:text-[52px]">
           {formatCurrency(data.balance)}
         </p>
         {pending.length > 0 && (
-          <p className="text-[12px] font-semibold text-white/60">
+          <p className="mt-2 text-[13px] text-white/60">
             {pending.length} request{pending.length === 1 ? '' : 's'} awaiting super-admin approval
           </p>
         )}
@@ -58,12 +58,12 @@ export default function BalancePage() {
       </div>
 
       <AdminCard>
-        <h2 className="text-[13px] font-extrabold uppercase tracking-[0.16em] text-subtle">History</h2>
+        <h2 className="text-lg font-medium tracking-tight text-ink">History</h2>
         <div className="mt-4">
           {data.transactions.length === 0 ? (
             <EmptyState title="No requests yet." />
           ) : (
-            <ul className="divide-y divide-black/[0.06]">
+            <ul className="divide-y divide-line">
               {data.transactions.map((tx) => (
                 <HistoryRow key={tx.id} tx={tx} />
               ))}
@@ -110,7 +110,7 @@ function DepositForm({ wallets, onDone }: { wallets: Wallet[]; onDone: () => Pro
 
   return (
     <AdminCard>
-      <h2 className="text-[13px] font-extrabold uppercase tracking-[0.16em] text-subtle">Request deposit</h2>
+      <h2 className="text-lg font-medium tracking-tight text-ink">Request deposit</h2>
       <p className="mt-1 text-[13px] text-muted">Pay into a listed wallet, then upload the receipt.</p>
       {wallets.length === 0 ? (
         <div className="mt-5">
@@ -126,13 +126,13 @@ function DepositForm({ wallets, onDone }: { wallets: Wallet[]; onDone: () => Pro
             ))}
           </AdminSelect>
           {wallet && (
-            <div className="flex items-center justify-between gap-3 rounded-2xl bg-black/[0.04] px-5 py-4">
-              <span className="min-w-0 break-all font-mono text-[13px] font-semibold text-ink">{wallet.address}</span>
+            <div className="flex items-center justify-between gap-3 rounded-xl bg-[#F4F3EE] px-4 py-3.5">
+              <span className="min-w-0 break-all font-mono text-[13px] font-medium text-ink">{wallet.address}</span>
               <button
                 type="button"
                 onClick={() => copy(wallet.address)}
                 aria-label="Copy address"
-                className="shrink-0 text-[11px] font-extrabold uppercase tracking-[0.14em] text-ink"
+                className="shrink-0 text-[13px] font-medium text-brand-600"
               >
                 {copied ? 'Copied' : <CopyIcon className="h-5 w-5" />}
               </button>
@@ -150,7 +150,7 @@ function DepositForm({ wallets, onDone }: { wallets: Wallet[]; onDone: () => Pro
           <div>
             <label
               htmlFor="deposit-receipt"
-              className="mb-2.5 block pl-2 text-[11px] font-bold uppercase tracking-[0.16em] text-subtle"
+              className="mb-2 block text-[13px] font-medium text-ink/80"
             >
               Receipt screenshot
             </label>
@@ -160,9 +160,9 @@ function DepositForm({ wallets, onDone }: { wallets: Wallet[]; onDone: () => Pro
               type="file"
               accept="image/jpeg,image/png,image/webp"
               onChange={(e) => setReceipt(e.target.files?.[0] ?? null)}
-              className="block w-full rounded-2xl border-[1.5px] border-dashed border-black/30 bg-[#fafafa] px-5 py-4 text-[14px] text-ink file:mr-4 file:rounded-xl file:border-0 file:bg-black file:px-4 file:py-2 file:text-[11px] file:font-extrabold file:uppercase file:tracking-[0.14em] file:text-gold"
+              className="block w-full rounded-xl border border-dashed border-line bg-cream px-4 py-3.5 text-sm text-ink file:mr-4 file:rounded-xl file:border-0 file:bg-ink file:px-4 file:py-2 file:text-[13px] file:font-medium file:text-white"
             />
-            <p className="mt-2 pl-2 text-[12px] text-subtle">JPG, PNG or WEBP, up to 4MB.</p>
+            <p className="mt-1.5 text-xs text-subtle">JPG, PNG or WEBP, up to 4MB.</p>
           </div>
           {result && <Notice tone={result.tone}>{result.text}</Notice>}
           <AdminButton
@@ -205,7 +205,7 @@ function WithdrawForm({ balance, onDone }: { balance: number; onDone: () => Prom
 
   return (
     <AdminCard>
-      <h2 className="text-[13px] font-extrabold uppercase tracking-[0.16em] text-subtle">Request withdrawal</h2>
+      <h2 className="text-lg font-medium tracking-tight text-ink">Request withdrawal</h2>
       <p className="mt-1 text-[13px] text-muted">Paid out as USDT on TRC20.</p>
       <form onSubmit={onSubmit} className="mt-5 space-y-5" noValidate>
         <AdminInput
@@ -243,20 +243,20 @@ function HistoryRow({ tx }: { tx: Transaction }) {
   return (
     <li className="flex flex-col gap-2 py-5 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0">
-        <p className="text-[15px] font-black uppercase tracking-tight text-ink">{tx.title}</p>
+        <p className="text-[15px] font-medium tracking-tight text-ink">{tx.title}</p>
         <p className="mt-0.5 text-[12px] text-subtle">{formatDateTime(tx.createdAt)}</p>
         {meta && <p className="mt-1 break-all text-[12px] text-muted">{meta}</p>}
       </div>
       <div className="shrink-0 sm:text-right">
-        <p className={cn('font-mono text-[16px] font-bold', tx.direction === 'credit' ? 'text-money' : 'text-ink')}>
+        <p className={cn('tabular text-[16px] font-medium', tx.direction === 'credit' ? 'text-money' : 'text-ink')}>
           {formatSignedCurrency(tx.amount, tx.direction)}
         </p>
         <span
           className={cn(
-            'mt-1 inline-block text-[10px] font-extrabold uppercase tracking-[0.14em]',
+            'mt-1 inline-block text-[10px] font-medium uppercase tracking-[0.1em]',
             tx.status === 'COMPLETED' && 'text-money',
             tx.status === 'REJECTED' && 'text-dangerSoft',
-            tx.status === 'PENDING' && 'text-[#b08a2e]'
+            tx.status === 'PENDING' && 'text-brand-600'
           )}
         >
           {tx.status === 'PENDING' ? 'Awaiting super-admin' : tx.status}

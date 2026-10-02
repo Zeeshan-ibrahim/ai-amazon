@@ -77,7 +77,7 @@ export function BannerFormModal({
           tone="soft"
           label="Banner image URL"
           labelAside={
-            <span className="rounded-full bg-black px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.12em] text-gold">
+            <span className="rounded-md bg-brand-500 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.1em] text-white">
               Recommended: 1200 x 675 (16:9)
             </span>
           }
@@ -104,14 +104,14 @@ export function BannerFormModal({
           tone="soft"
           label="Support note (Telegram)"
           labelAside={
-            <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-subtle">Auto-fills in chat</span>
+            <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-subtle">Auto-fills in chat</span>
           }
           placeholder="Internal reference..."
           value={form.supportNote}
           onChange={(e) => set('supportNote')(e.target.value)}
         />
         {error && <Notice tone="error">{error}</Notice>}
-        <AdminButton type="submit" size="lg" loading={saving} className="w-full rounded-[22px] tracking-[0.2em]">
+        <AdminButton type="submit" size="lg" loading={saving} className="w-full">
           {editing ? 'Update banner' : 'Create banner'}
         </AdminButton>
       </form>

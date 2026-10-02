@@ -107,19 +107,19 @@ export function AuditsTab({ member }: { member: Member }) {
         ) : data.length === 0 ? (
           <EmptyState title="No recorded activity yet." />
         ) : (
-          <ol className="relative space-y-6 border-l-2 border-black/[0.08] pl-6">
+          <ol className="relative space-y-6 border-l-2 border-line pl-6">
             {data.map((entry) => {
               const line = describe(entry);
               return (
                 <li key={entry.id} className="relative">
-                  <span className="absolute -left-[31px] top-1.5 h-3 w-3 rounded-full border-2 border-white bg-gold ring-2 ring-gold/30" />
+                  <span className="absolute -left-[31px] top-1.5 h-3 w-3 rounded-full border-2 border-white bg-brand-500 ring-2 ring-brand-200" />
                   <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
-                    <p className="text-[14px] font-black uppercase tracking-tight text-ink">
+                    <p className="text-[14px] font-medium tracking-tight text-ink">
                       {ACTION_LABELS[entry.action] ?? entry.action}
                     </p>
                     <p className="shrink-0 text-[12px] text-subtle">{formatDateTime(entry.createdAt)}</p>
                   </div>
-                  <p className="mt-0.5 text-[12px] font-bold uppercase tracking-[0.12em] text-subtle">
+                  <p className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.14em] text-subtle">
                     by {entry.actor ? `@${entry.actor.handle}` : 'deleted user'}
                     {entry.actor && entry.actor.role !== 'user' && ` · ${ROLE_LABELS[entry.actor.role]}`}
                   </p>

@@ -1,6 +1,7 @@
 /**
- * Admin panel primitives. The admin look is its own: heavy uppercase type,
- * black + gold actions, big rounded cards, monospace money and codes.
+ * Admin panel primitives. They share the member app's design language
+ * (docs/design-system.md): cream page, white `line` cards, ink primary
+ * actions, brand-green accents, medium-weight type.
  */
 'use client';
 
@@ -28,13 +29,13 @@ export function AdminPageHeader({
   actions?: ReactNode;
 }) {
   return (
-    <header className="flex flex-col gap-5 border-b border-black/[0.06] pb-7 lg:flex-row lg:items-center lg:justify-between">
+    <header className="flex flex-col gap-5 border-b border-line pb-6 lg:flex-row lg:items-center lg:justify-between">
       <div className="min-w-0">
-        <h1 className="text-[28px] font-black uppercase leading-none tracking-tight text-ink sm:text-[34px]">
+        <h1 className="text-[26px] font-medium leading-tight tracking-tight text-ink lg:text-[30px]">
           {title}
         </h1>
         {subtitle && (
-          <p className="mt-3 max-w-xl text-[12px] font-bold uppercase leading-relaxed tracking-[0.18em] text-subtle">
+          <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-muted">
             {subtitle}
           </p>
         )}
@@ -48,7 +49,7 @@ export function AdminCard({ className, children }: { className?: string; childre
   return (
     <section
       className={cn(
-        'rounded-[28px] border border-black/[0.07] bg-white p-5 shadow-[0_18px_40px_-28px_rgba(0,0,0,0.25)] sm:p-7',
+        'rounded-card border border-line bg-surface p-5 shadow-card sm:p-6',
         className
       )}
     >
@@ -63,7 +64,7 @@ export function AdminCard({ className, children }: { className?: string; childre
  */
 export function PicturesNeeded({ what }: { what: string }) {
   return (
-    <p className="inline-flex items-center gap-2 rounded-full border border-dashed border-amber-500/60 bg-amber-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-amber-700">
+    <p className="inline-flex items-center gap-2 rounded-md border border-dashed border-amber-500/60 bg-amber-50 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.1em] text-amber-700">
       <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
       Pictures needed · {what}
     </p>
@@ -75,11 +76,11 @@ export function PicturesNeeded({ what }: { what: string }) {
 type ButtonVariant = 'primary' | 'dark' | 'outline' | 'danger' | 'success';
 
 const buttonVariants: Record<ButtonVariant, string> = {
-  primary: 'bg-black text-gold shadow-[0_12px_24px_-14px_rgba(0,0,0,0.8)] hover:bg-black/85',
-  dark: 'bg-[#1c1c1c] text-gold hover:bg-black',
-  outline: 'border border-black/15 bg-white text-ink hover:border-black/40',
-  danger: 'border border-dangerSoft/30 bg-dangerSoft/5 text-dangerSoft hover:bg-dangerSoft/10',
-  success: 'border border-money/30 bg-money/5 text-money hover:bg-money/10',
+  primary: 'bg-ink text-white hover:bg-black/85',
+  dark: 'bg-brand-600 text-white hover:bg-brand-700',
+  outline: 'border border-line bg-white text-ink hover:border-ink/25 hover:bg-cream',
+  danger: 'border border-dangerSoft/25 bg-dangerSoft/5 text-dangerSoft hover:bg-dangerSoft/10',
+  success: 'border border-brand-200 bg-brand-50 text-brand-600 hover:bg-brand-100',
 };
 
 export function AdminButton({
@@ -101,10 +102,12 @@ export function AdminButton({
     <button
       disabled={disabled || loading}
       className={cn(
-        'inline-flex shrink-0 items-center justify-center gap-2.5 rounded-2xl font-extrabold uppercase tracking-[0.14em] transition-colors disabled:cursor-not-allowed disabled:opacity-50',
-        size === 'sm' && 'px-4 py-2.5 text-[11px]',
-        size === 'md' && 'px-6 py-3.5 text-[12px]',
-        size === 'lg' && 'px-6 py-5 text-[13px]',
+        'inline-flex shrink-0 items-center justify-center gap-2 rounded-xl font-medium transition-colors',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40 focus-visible:ring-offset-2',
+        'disabled:cursor-not-allowed disabled:opacity-60',
+        size === 'sm' && 'h-9 px-3.5 text-[13px]',
+        size === 'md' && 'h-11 px-5 text-sm',
+        size === 'lg' && 'h-[52px] px-6 text-[15px]',
         buttonVariants[variant],
         className
       )}
@@ -122,7 +125,7 @@ export function AdminButton({
 
 /**
  * One tab in a pill switcher (Financials, Plan Requests). `dark` is the
- * black/gold primary filter, `gold` the secondary one; `badge` shows a count.
+ * primary (ink) filter, `gold` the secondary (brand) one; `badge` shows a count.
  */
 export function Segment({
   active,
@@ -144,20 +147,20 @@ export function Segment({
       aria-selected={active}
       onClick={onClick}
       className={cn(
-        'flex flex-1 items-center justify-center gap-2 rounded-2xl px-6 py-3.5 text-[13px] font-extrabold uppercase tracking-[0.16em] transition-colors sm:flex-none sm:px-8',
+        'flex flex-1 items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-sm transition-colors sm:flex-none sm:px-6',
         active
           ? tone === 'dark'
-            ? 'bg-black text-gold shadow-[0_10px_20px_-12px_rgba(0,0,0,0.8)]'
-            : 'bg-gold text-ink shadow-[0_10px_20px_-12px_rgba(217,180,90,0.9)]'
-          : 'text-subtle hover:text-ink'
+            ? 'bg-ink font-medium text-white'
+            : 'bg-brand-500 font-medium text-white'
+          : 'text-muted hover:text-ink'
       )}
     >
       {children}
       {badge ? (
         <span
           className={cn(
-            'min-w-[22px] rounded-full px-1.5 py-0.5 text-[11px] tracking-normal',
-            active ? 'bg-gold text-ink' : 'bg-black text-gold'
+            'min-w-[20px] rounded-md px-1.5 py-0.5 text-[11px] font-medium',
+            active ? 'bg-white/20 text-white' : 'bg-brand-50 text-brand-600'
           )}
         >
           {badge}
@@ -170,14 +173,14 @@ export function Segment({
 /* ------------------------------------------------------------- fields */
 
 const fieldShape =
-  'w-full rounded-2xl px-5 py-4 text-[16px] font-semibold text-ink placeholder:font-medium placeholder:text-subtle focus:bg-white focus:outline-none focus:ring-4 focus:ring-gold/20 disabled:cursor-not-allowed disabled:opacity-60';
+  'w-full rounded-xl px-4 py-3.5 text-[15px] text-ink placeholder:text-subtle transition-colors focus:border-brand-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/15 disabled:cursor-not-allowed disabled:opacity-60';
 
 /** `outlined` for member forms, `soft` for the lighter modal forms (products). */
 type FieldTone = 'outlined' | 'soft';
 
 const fieldTones: Record<FieldTone, string> = {
-  outlined: 'border-[1.5px] border-black/80 bg-[#fafafa] focus:border-black',
-  soft: 'border border-black/[0.05] bg-[#f7f7f7] focus:border-black/30',
+  outlined: 'border border-line bg-white',
+  soft: 'border border-line bg-cream',
 };
 
 const fieldBase = `${fieldShape} ${fieldTones.outlined}`;
@@ -187,7 +190,7 @@ function FieldLabel({ htmlFor, aside, children }: { htmlFor: string; aside?: Rea
   const label = (
     <label
       htmlFor={htmlFor}
-      className="mb-2.5 block pl-2 text-[11px] font-bold uppercase tracking-[0.16em] text-subtle"
+      className="mb-2 block text-[13px] font-medium text-ink/80"
     >
       {children}
     </label>
@@ -196,7 +199,7 @@ function FieldLabel({ htmlFor, aside, children }: { htmlFor: string; aside?: Rea
   return (
     <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1">
       {label}
-      <div className="mb-2.5">{aside}</div>
+      <div className="mb-2">{aside}</div>
     </div>
   );
 }
@@ -220,18 +223,18 @@ export const AdminInput = forwardRef<
       </FieldLabel>
       <div className="relative">
         {prefix && (
-          <span className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-[16px] font-semibold text-ink">
+          <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-muted">
             {prefix}
           </span>
         )}
         <input
           ref={ref}
           id={inputId}
-          className={cn(fieldShape, fieldTones[tone], prefix && 'pl-10', className)}
+          className={cn(fieldShape, fieldTones[tone], prefix && 'pl-8', className)}
           {...props}
         />
       </div>
-      {hint && <p className="mt-2 pl-2 text-[12px] text-subtle">{hint}</p>}
+      {hint && <p className="mt-1.5 text-xs text-subtle">{hint}</p>}
     </div>
   );
 });
@@ -254,7 +257,7 @@ export function AdminTextarea({
         className={cn(fieldShape, fieldTones[tone], 'min-h-[120px] resize-y leading-relaxed', className)}
         {...props}
       />
-      {hint && <p className="mt-2 pl-2 text-[12px] text-subtle">{hint}</p>}
+      {hint && <p className="mt-1.5 text-xs text-subtle">{hint}</p>}
     </div>
   );
 }
@@ -273,13 +276,13 @@ export function AdminSelect({
     <div className="w-full">
       <FieldLabel htmlFor={selectId}>{label}</FieldLabel>
       <div className="relative">
-        <select id={selectId} className={cn(fieldBase, 'appearance-none pr-12', className)} {...props}>
+        <select id={selectId} className={cn(fieldBase, 'appearance-none pr-11', className)} {...props}>
           {children}
         </select>
         <svg
           aria-hidden
           viewBox="0 0 24 24"
-          className="pointer-events-none absolute right-5 top-1/2 h-5 w-5 -translate-y-1/2 text-ink"
+          className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted"
           fill="none"
           stroke="currentColor"
           strokeWidth={1.8}
@@ -287,12 +290,12 @@ export function AdminSelect({
           <path d="m6 9 6 6 6-6" />
         </svg>
       </div>
-      {hint && <p className="mt-2 pl-2 text-[12px] text-subtle">{hint}</p>}
+      {hint && <p className="mt-1.5 text-xs text-subtle">{hint}</p>}
     </div>
   );
 }
 
-/** Uppercase search box used in page headers and the allocation hub. */
+/** Search box used in page headers and the allocation hub. */
 export function AdminSearch({
   value,
   onChange,
@@ -312,7 +315,7 @@ export function AdminSearch({
       <svg
         aria-hidden
         viewBox="0 0 24 24"
-        className="pointer-events-none absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-ink/70"
+        className="pointer-events-none absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted"
         fill="none"
         stroke="currentColor"
         strokeWidth={1.8}
@@ -326,10 +329,8 @@ export function AdminSearch({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         className={cn(
-          'w-full rounded-2xl border border-black/10 bg-white py-4 pl-14 pr-5 text-[15px] font-semibold text-ink focus:border-black/40 focus:outline-none focus:ring-4 focus:ring-gold/20',
-          tone === 'caps'
-            ? 'placeholder:text-[13px] placeholder:font-bold placeholder:uppercase placeholder:tracking-[0.14em] placeholder:text-subtle'
-            : 'placeholder:font-medium placeholder:text-subtle'
+          'h-11 w-full rounded-xl border border-line bg-white pl-11 pr-4 text-sm text-ink transition-colors placeholder:text-subtle focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-500/15',
+          tone === 'caps' && 'placeholder:text-[13px]'
         )}
       />
     </label>
@@ -348,14 +349,14 @@ export function RoleBadge({ role, outlined }: { role: Role; outlined?: boolean }
   return (
     <span
       className={cn(
-        'inline-flex items-center whitespace-nowrap rounded-full px-4 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em]',
+        'inline-flex items-center whitespace-nowrap rounded-md px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.1em]',
         role === 'super_admin'
-          ? 'bg-gold/15 text-[#8a6a1f]'
+          ? 'bg-brand-500 text-white'
           : role === 'sub_admin'
-            ? 'bg-black text-gold'
+            ? 'bg-brand-50 text-brand-600'
             : outlined
-              ? 'border border-black/10 bg-white text-ink'
-              : 'bg-black/[0.04] text-subtle'
+              ? 'border border-line bg-white text-muted'
+              : 'bg-black/5 text-muted'
       )}
     >
       {ROLE_LABELS[role]}
@@ -367,8 +368,8 @@ export function AccountStatusBadge({ status }: { status: 'active' | 'suspended' 
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-full px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.12em]',
-        status === 'active' ? 'bg-money/10 text-money' : 'bg-dangerSoft/10 text-dangerSoft'
+        'inline-flex items-center rounded-md px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.1em]',
+        status === 'active' ? 'bg-brand-50 text-brand-600' : 'bg-dangerSoft/10 text-dangerSoft'
       )}
     >
       {status}
@@ -381,8 +382,8 @@ export function AddedByBadge({ addedBy, className }: { addedBy: AddedBy; classNa
   return (
     <span
       className={cn(
-        'inline-flex max-w-full items-center truncate rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em]',
-        addedBy ? 'bg-black/[0.06] text-ink' : 'bg-gold/15 text-[#8a6a1f]',
+        'inline-flex max-w-full items-center truncate rounded-md px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.1em]',
+        addedBy ? 'bg-black/5 text-muted' : 'bg-brand-50 text-brand-600',
         className
       )}
     >
@@ -391,14 +392,14 @@ export function AddedByBadge({ addedBy, className }: { addedBy: AddedBy; classNa
   );
 }
 
-/** Black disc with the member's initial in gold. */
+/** Brand disc with the member's initial. */
 export function MemberInitial({ name, size = 'md' }: { name: string; size?: 'md' | 'lg' }) {
   return (
     <span
       aria-hidden
       className={cn(
-        'inline-flex shrink-0 items-center justify-center rounded-full bg-black font-black text-gold',
-        size === 'md' ? 'h-14 w-14 text-[18px]' : 'h-16 w-16 bg-[#1c1c1c] text-[22px] ring-1 ring-gold/40 sm:h-[76px] sm:w-[76px]'
+        'inline-flex shrink-0 items-center justify-center rounded-full bg-brand-50 font-medium text-brand-600',
+        size === 'md' ? 'h-12 w-12 text-[17px]' : 'h-16 w-16 text-[22px] ring-1 ring-brand-200 sm:h-[72px] sm:w-[72px]'
       )}
     >
       {(name.trim()[0] ?? '?').toUpperCase()}
@@ -412,10 +413,10 @@ export function Notice({ tone = 'info', children }: { tone?: 'info' | 'error' | 
   return (
     <p
       className={cn(
-        'rounded-2xl px-4 py-3 text-[13px] font-medium',
-        tone === 'info' && 'bg-black/[0.04] text-ink/80',
+        'rounded-xl px-4 py-3 text-[13px]',
+        tone === 'info' && 'bg-[#F4F3EE] text-ink/80',
         tone === 'error' && 'bg-dangerSoft/10 text-dangerSoft',
-        tone === 'success' && 'bg-money/10 text-money',
+        tone === 'success' && 'bg-brand-50 text-brand-600',
         tone === 'warn' && 'border border-amber-500/30 bg-amber-50 text-amber-800'
       )}
     >

@@ -2,15 +2,16 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { Logo } from '@/components/layout/Logo';
 import { useSession } from '@/components/layout/SessionProvider';
-import { CloseIcon, LogoMark, LogoutIcon, UserIcon } from '@/components/ui/Icons';
+import { CloseIcon, LogoutIcon, UserIcon } from '@/components/ui/Icons';
 import { cn } from '@/lib/cn';
 import { adminNavFor } from '@/lib/nav';
 import { ROLE_LABELS } from './ui';
 
 /**
- * Black admin sidebar. Always visible from `lg`; below that it is a drawer
- * that `AdminShell` slides in and out.
+ * Admin sidebar, styled like the member sidebar. Always visible from `lg`;
+ * below that it is a drawer that `AdminShell` slides in and out.
  */
 export function AdminSidebar({
   open,
@@ -27,33 +28,28 @@ export function AdminSidebar({
     <aside
       id="admin-sidebar"
       className={cn(
-        'fixed inset-y-0 left-0 z-50 flex w-[300px] max-w-[85vw] flex-col border-r border-white/10 bg-black text-white transition-transform duration-300 ease-out lg:translate-x-0',
+        'fixed inset-y-0 left-0 z-50 flex w-[276px] max-w-[85vw] flex-col bg-sidebar-veil p-4 text-white shadow-panel transition-transform duration-300 ease-out lg:translate-x-0',
         open ? 'translate-x-0' : '-translate-x-full'
       )}
     >
-      <div className="flex items-center gap-3 border-b border-white/10 px-5 py-6">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.06] text-gold">
-          <LogoMark className="h-5 w-7" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[15px] font-bold uppercase leading-tight tracking-tight">
-            Infinity Vest
+      <div className="mb-6 flex items-center justify-between gap-3 px-3 pt-3">
+        <Link href="/admin/analytics" className="min-w-0">
+          <Logo markClassName="text-white" />
+          <p className="mt-1.5 text-[10px] font-medium uppercase tracking-[0.14em] text-brand-300">
+            Admin portal
           </p>
-          <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-gold">
-            Group Admin
-          </p>
-        </div>
+        </Link>
         <button
           type="button"
           onClick={onClose}
           aria-label="Close menu"
-          className="rounded-xl border border-gold/70 p-2 text-gold transition-colors hover:bg-gold/10 lg:hidden"
+          className="rounded-lg p-1.5 text-white/60 transition-colors hover:bg-white/10 hover:text-white lg:hidden"
         >
           <CloseIcon className="h-5 w-5" />
         </button>
       </div>
 
-      <nav className="flex-1 space-y-1.5 overflow-y-auto px-3 py-6">
+      <nav className="-mx-1 flex flex-1 flex-col gap-1 overflow-y-auto px-1 scrollbar-none">
         {adminNavFor(user?.role).map(({ slug, label, icon: Icon }) => {
           const href = `/admin/${slug}`;
           const isActive = pathname.startsWith(href);
@@ -63,37 +59,35 @@ export function AdminSidebar({
               href={href}
               aria-current={isActive ? 'page' : undefined}
               className={cn(
-                'flex items-center gap-4 rounded-2xl border px-5 py-3.5 text-[13px] font-semibold uppercase tracking-[0.16em] transition-colors',
+                'flex items-center gap-3 rounded-xl px-4 py-3 text-[15px] transition-colors',
                 isActive
-                  ? 'border-gold/40 bg-white/[0.08] text-gold shadow-[0_10px_28px_-14px_rgba(217,180,90,0.55)]'
-                  : 'border-transparent text-white/70 hover:bg-white/[0.04] hover:text-white'
+                  ? 'bg-brand-500 font-medium text-white'
+                  : 'text-white/65 hover:bg-white/5 hover:text-white'
               )}
             >
-              <Icon className="h-5 w-5 shrink-0" />
+              <Icon className="h-[19px] w-[19px] shrink-0" />
               {label}
             </Link>
           );
         })}
       </nav>
 
-      <div className="border-t border-white/10 p-3">
-        <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-gold/40 bg-gold/10 text-gold">
-            <UserIcon className="h-5 w-5" />
+      <div className="mt-4 border-t border-white/10 pt-4">
+        <div className="flex items-center gap-3 px-2 pb-2">
+          <div className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-full bg-white/10 text-brand-300">
+            <UserIcon className="h-[18px] w-[18px]" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[14px] font-semibold">@{handle}</p>
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-gold">
-              {user ? ROLE_LABELS[user.role] : ''}
-            </p>
+            <p className="truncate text-[13px] font-medium text-white">@{handle}</p>
+            <p className="truncate text-[11px] text-white/45">{user ? ROLE_LABELS[user.role] : ''}</p>
           </div>
           <button
             type="button"
             onClick={logout}
             aria-label="Log out"
-            className="rounded-xl border border-dangerSoft/40 bg-dangerSoft/10 p-2 text-dangerSoft transition-colors hover:bg-dangerSoft/20"
+            className="rounded-lg p-1.5 text-white/50 transition-colors hover:bg-white/10 hover:text-white"
           >
-            <LogoutIcon className="h-4 w-4" />
+            <LogoutIcon className="h-[18px] w-[18px]" />
           </button>
         </div>
       </div>

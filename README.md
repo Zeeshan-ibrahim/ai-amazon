@@ -1,4 +1,4 @@
-# Quick On Amazon
+# MallHub
 
 Amazon arbitrage trading dashboard — a Next.js frontend and an Express API.
 <!-- here -->

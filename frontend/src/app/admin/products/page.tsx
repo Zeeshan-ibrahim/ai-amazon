@@ -47,7 +47,7 @@ export default function ProductsPage() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 lg:space-y-8">
       <AdminPageHeader
         title="Products"
         subtitle={
@@ -58,8 +58,7 @@ export default function ProductsPage() {
         actions={
           <AdminButton
             onClick={() => setEditor({ open: true, product: null })}
-            icon={<PlusIcon className="h-5 w-5" />}
-            className="py-4"
+            icon={<PlusIcon className="h-[18px] w-[18px]" />}
           >
             Add product
           </AdminButton>
@@ -73,12 +72,11 @@ export default function ProductsPage() {
       ) : loading ? (
         <ProductGrid>
           {Array.from({ length: 8 }).map((_, i) => (
-            <Skeleton key={i} className="h-[420px] rounded-[28px]" />
+            <Skeleton key={i} className="h-[420px] rounded-card" />
           ))}
         </ProductGrid>
       ) : items.length === 0 ? (
         <EmptyState
-          className="border-black/10"
           title="No products yet."
           hint="Add one to make it available for allocation to members."
         />
@@ -122,7 +120,7 @@ export default function ProductsPage() {
 }
 
 function ProductGrid({ children }: { children: ReactNode }) {
-  return <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">{children}</div>;
+  return <div className="grid gap-4 sm:grid-cols-2 lg:gap-5 xl:grid-cols-3 2xl:grid-cols-4">{children}</div>;
 }
 
 /** "2.5" → "2.5%", "1.000" → "1%". */
@@ -143,8 +141,8 @@ function ProductCard({
   onDelete: () => void;
 }) {
   return (
-    <article className="flex flex-col overflow-hidden rounded-[28px] border border-black/[0.07] bg-white shadow-[0_18px_40px_-28px_rgba(0,0,0,0.25)]">
-      <div className="relative aspect-square bg-[#f7f7f7]">
+    <article className="flex flex-col overflow-hidden rounded-card border border-line bg-white shadow-card">
+      <div className="relative aspect-square bg-cream">
         {product.image ? (
           // Plain <img>: admins paste images from any host, which next/image won't allow.
           <img
@@ -156,15 +154,15 @@ function ProductCard({
           />
         ) : (
           <div className="flex h-full items-center justify-center text-black/15">
-            <BagIcon className="h-16 w-16" />
+            <BagIcon className="h-12 w-12" />
           </div>
         )}
-        <span className="absolute right-4 top-4 rounded-xl bg-[#1c1c1c] px-3 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-gold">
+        <span className="absolute right-4 top-4 rounded-md bg-brand-500 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.1em] text-white">
           {formatReturn(product.profitPercentage)} return
         </span>
         <span className="absolute left-4 top-4">
           {typeof ownerLabel === 'string' ? (
-            <span className="rounded-full bg-white/90 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-ink">
+            <span className="rounded-md bg-white/90 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.1em] text-ink">
               {ownerLabel}
             </span>
           ) : (
@@ -173,22 +171,22 @@ function ProductCard({
         </span>
       </div>
 
-      <div className="flex flex-1 flex-col p-6 pt-5">
-        <h2 title={product.title} className="truncate text-[17px] font-black uppercase tracking-tight text-ink">
+      <div className="flex flex-1 flex-col p-5">
+        <h2 title={product.title} className="truncate text-[15px] font-medium tracking-tight text-ink">
           {product.title}
         </h2>
-        <p className="mt-1 text-[20px] font-black text-ink">{formatCurrency(product.price)}</p>
+        <p className="tabular mt-1 text-[20px] font-medium tracking-tight text-ink">{formatCurrency(product.price)}</p>
 
         {!product.editable ? (
-          <p className="mt-auto pt-6 text-[11px] font-bold uppercase tracking-[0.14em] text-subtle">
+          <p className="mt-auto pt-5 text-[10px] font-medium uppercase tracking-[0.14em] text-subtle">
             Shared catalog · assign it from a member&apos;s Orders tab
           </p>
         ) : (
-        <div className="mt-auto flex items-center gap-3 pt-6">
+        <div className="mt-auto flex items-center gap-2 pt-5">
           <button
             type="button"
             onClick={onEdit}
-            className="inline-flex flex-1 items-center justify-center gap-2.5 rounded-2xl border border-black/[0.05] bg-[#f7f7f7] py-3.5 text-[12px] font-extrabold uppercase tracking-[0.14em] text-ink transition-colors hover:bg-black/[0.06]"
+            className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-line bg-white text-sm font-medium text-ink transition-colors hover:border-ink/25 hover:bg-cream"
           >
             <EditIcon className="h-[18px] w-[18px]" />
             Edit
@@ -198,12 +196,12 @@ function ProductCard({
             onClick={onDelete}
             disabled={deleting}
             aria-label={`Delete ${product.title}`}
-            className="inline-flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-2xl bg-dangerSoft/10 text-dangerSoft transition-colors hover:bg-dangerSoft/20 disabled:opacity-50"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-dangerSoft/10 text-dangerSoft transition-colors hover:bg-dangerSoft/20 disabled:opacity-50"
           >
             {deleting ? (
               <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
             ) : (
-              <TrashIcon className="h-5 w-5" />
+              <TrashIcon className="h-[18px] w-[18px]" />
             )}
           </button>
         </div>

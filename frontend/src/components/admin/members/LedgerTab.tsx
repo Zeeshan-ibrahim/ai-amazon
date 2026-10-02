@@ -57,7 +57,7 @@ export function LedgerTab({
       <AdjustBalanceForm memberId={member.id} onDone={changed} />
 
       <AdminCard>
-        <h2 className="text-[13px] font-extrabold uppercase tracking-[0.16em] text-subtle">
+        <h2 className="text-lg font-medium tracking-tight text-ink">
           Transactions
         </h2>
         {!member.hasApprovedDeposit && member.role === 'user' && (
@@ -75,7 +75,7 @@ export function LedgerTab({
           ) : entries.length === 0 ? (
             <EmptyState title="No transactions yet." />
           ) : (
-            <ul className="divide-y divide-black/[0.06]">
+            <ul className="divide-y divide-line">
               {entries.map((entry) => (
                 <EntryRow key={entry.id} entry={entry} onReviewed={changed} />
               ))}
@@ -91,12 +91,12 @@ function Stat({ label, value, highlight }: { label: string; value: string; highl
   return (
     <div
       className={cn(
-        'rounded-3xl border bg-white p-5',
-        highlight ? 'border-gold/60 shadow-[0_10px_28px_-18px_rgba(217,180,90,0.9)]' : 'border-black/[0.07]'
+        'rounded-card border bg-white p-5',
+        highlight ? 'border-brand-300 shadow-card' : 'border-line'
       )}
     >
-      <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-subtle">{label}</p>
-      <p className="mt-2 font-mono text-[22px] font-bold text-ink">{value}</p>
+      <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-subtle">{label}</p>
+      <p className="tabular mt-2 text-[22px] font-medium tracking-tight text-ink">{value}</p>
     </div>
   );
 }
@@ -127,14 +127,14 @@ function AdjustBalanceForm({ memberId, onDone }: { memberId: string; onDone: () 
 
   return (
     <AdminCard>
-      <h2 className="text-[13px] font-extrabold uppercase tracking-[0.16em] text-subtle">
+      <h2 className="text-lg font-medium tracking-tight text-ink">
         Adjust balance
       </h2>
       <p className="mt-1 text-[13px] text-muted">
         Applies immediately. Adjustments don&apos;t count as deposits.
       </p>
       <form onSubmit={onSubmit} className="mt-5 space-y-5" noValidate>
-        <div className="inline-flex rounded-2xl bg-black/[0.04] p-1">
+        <div className="inline-flex rounded-xl bg-[#F4F3EE] p-1">
           {(['credit', 'debit'] as const).map((d) => (
             <button
               key={d}
@@ -142,8 +142,8 @@ function AdjustBalanceForm({ memberId, onDone }: { memberId: string; onDone: () 
               aria-pressed={direction === d}
               onClick={() => setDirection(d)}
               className={cn(
-                'rounded-xl px-6 py-2.5 text-[12px] font-extrabold uppercase tracking-[0.14em] transition-colors',
-                direction === d ? 'bg-black text-gold' : 'text-ink/60 hover:text-ink'
+                'rounded-lg px-5 py-2 text-[13px] capitalize transition-colors',
+                direction === d ? 'bg-white font-medium text-ink shadow-card' : 'text-muted hover:text-ink'
               )}
             >
               {d}
@@ -206,7 +206,7 @@ function EntryRow({ entry, onReviewed }: { entry: LedgerEntry; onReviewed: () =>
   return (
     <li className="flex flex-col gap-4 py-5 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0">
-        <p className="text-[15px] font-black uppercase tracking-tight text-ink">
+        <p className="text-[15px] font-medium tracking-tight text-ink">
           {TYPE_LABELS[entry.type]}
         </p>
         <p className="mt-0.5 text-[12px] text-subtle">{formatDateTime(entry.createdAt)}</p>
@@ -215,7 +215,7 @@ function EntryRow({ entry, onReviewed }: { entry: LedgerEntry; onReviewed: () =>
           <button
             type="button"
             onClick={() => setViewing(true)}
-            className="mt-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-ink underline underline-offset-4"
+            className="mt-2 text-[13px] font-medium text-brand-600 hover:underline"
           >
             View screenshot
           </button>
@@ -228,7 +228,7 @@ function EntryRow({ entry, onReviewed }: { entry: LedgerEntry; onReviewed: () =>
         <div className="text-right">
           <p
             className={cn(
-              'font-mono text-[16px] font-bold',
+              'tabular text-[16px] font-medium',
               entry.direction === 'credit' ? 'text-money' : 'text-ink'
             )}
           >
@@ -255,10 +255,10 @@ function StatusPill({ status }: { status: string }) {
   return (
     <span
       className={cn(
-        'mt-1 inline-block text-[10px] font-extrabold uppercase tracking-[0.14em]',
+        'mt-1 inline-block text-[10px] font-medium uppercase tracking-[0.1em]',
         status === 'COMPLETED' && 'text-money',
         status === 'REJECTED' && 'text-dangerSoft',
-        status === 'PENDING' && 'text-[#b08a2e]'
+        status === 'PENDING' && 'text-brand-600'
       )}
     >
       {status}

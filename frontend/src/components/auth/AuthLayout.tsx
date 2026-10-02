@@ -23,7 +23,7 @@ export function AuthLayout({
       <div className="flex min-h-[calc(100vh-280px)] flex-col px-6 pb-8 pt-8 sm:px-10 lg:min-h-screen lg:justify-center lg:px-16">
         <div className="mx-auto w-full max-w-[420px] flex-1 lg:flex-none">
           <div className="mb-8 hidden flex-col items-center gap-2 lg:flex">
-            <Logo stacked={false} className="flex-col gap-2 text-ink" markClassName="text-brand-600 h-9 w-14" />
+            <Logo className="flex-col gap-2 text-ink" markClassName="text-brand-600 h-9 w-14" />
           </div>
 
           <div className="text-center">

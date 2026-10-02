@@ -28,12 +28,12 @@ export function ReceiptViewer({ entry, onClose }: { entry: LedgerEntry; onClose:
           src={url}
           alt={`Receipt${entry.receiptName ? ` ${entry.receiptName}` : ''}`}
           onError={() => setFailed(true)}
-          className="mx-auto max-h-[70vh] w-auto rounded-2xl border border-black/10"
+          className="mx-auto max-h-[70vh] w-auto rounded-xl border border-line"
         />
       )}
       <div className="mt-4 flex items-center justify-between gap-3 text-[12px] text-subtle">
         <span className="truncate">{entry.receiptName}</span>
-        <a href={url} target="_blank" rel="noreferrer" className="shrink-0 font-bold text-ink underline underline-offset-4">
+        <a href={url} target="_blank" rel="noreferrer" className="shrink-0 font-medium text-ink underline underline-offset-4">
           Open original
         </a>
       </div>

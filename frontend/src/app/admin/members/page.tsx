@@ -18,6 +18,7 @@ import { useDebounced } from '@/hooks/useDebounced';
 import { usePagedList } from '@/hooks/usePagedList';
 import { handleOf, useSubAdmins } from '@/hooks/useSubAdmins';
 import { api } from '@/lib/api';
+import { cn } from '@/lib/cn';
 import { formatCurrency } from '@/lib/format';
 import type { Member } from '@/lib/types';
 
@@ -42,7 +43,7 @@ export default function MembersPage() {
     usePagedList<Member>(fetchPage);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 lg:space-y-8">
       <AdminPageHeader
         title="Group management"
         subtitle={
@@ -58,7 +59,7 @@ export default function MembersPage() {
                 <select
                   value={addedBy}
                   onChange={(e) => setAddedBy(e.target.value)}
-                  className="w-full rounded-2xl border border-black/10 bg-white px-5 py-4 text-[13px] font-bold uppercase tracking-[0.12em] text-ink focus:border-black/40 focus:outline-none focus:ring-4 focus:ring-gold/20"
+                  className="h-11 w-full rounded-xl border border-line bg-white px-4 text-sm text-ink focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-500/15"
                 >
                   <option value="">All owners</option>
                   <option value="super">Super-admin</option>
@@ -78,8 +79,8 @@ export default function MembersPage() {
             />
             <AdminButton
               onClick={() => setAdding(true)}
-              icon={<UserPlusIcon className="h-5 w-5" />}
-              className="py-4"
+              icon={<UserPlusIcon className="h-[18px] w-[18px]" />}
+              
             >
               Add member
             </AdminButton>
@@ -90,31 +91,31 @@ export default function MembersPage() {
       {error ? (
         <ErrorState message={error} onRetry={reload} />
       ) : (
-        <div className="overflow-hidden rounded-[32px] border border-black/[0.07] bg-white shadow-[0_18px_40px_-28px_rgba(0,0,0,0.25)]">
+        <div className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[880px] text-left">
               <thead>
-                <tr className="border-b-2 border-ink">
+                <tr className="border-b border-line bg-cream/60">
                   {columns.map((col, i) => (
                     <th
                       key={col}
                       scope="col"
-                      className={
-                        'px-6 py-7 text-[12px] font-extrabold uppercase leading-snug tracking-[0.16em] text-ink/80 first:pl-8 last:pr-8 ' +
-                        (i === columns.length - 1 ? 'text-right' : '')
-                      }
+                      className={cn(
+                        'px-6 py-4 text-[10px] font-medium uppercase leading-snug tracking-[0.14em] text-subtle first:pl-6 last:pr-6',
+                        i === columns.length - 1 && 'text-right'
+                      )}
                     >
                       {col}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-black/[0.06]">
+              <tbody className="divide-y divide-line">
                 {loading
                   ? Array.from({ length: 5 }).map((_, i) => (
                       <tr key={i}>
-                        <td colSpan={columns.length} className="px-8 py-5">
-                          <Skeleton className="h-14 w-full" />
+                        <td colSpan={columns.length} className="px-6 py-4">
+                          <Skeleton className="h-12 w-full" />
                         </td>
                       </tr>
                     ))
@@ -127,13 +128,13 @@ export default function MembersPage() {
 
           {!loading && items.length === 0 && (
             <EmptyState
-              className="m-6 border-black/10"
+              className="m-5"
               title={q || addedBy ? 'No members match these filters.' : 'No members yet.'}
             />
           )}
 
           {hasMore && (
-            <div className="border-t border-black/[0.06] p-5 text-center">
+            <div className="border-t border-line p-5 text-center">
               <AdminButton variant="outline" size="sm" loading={loadingMore} onClick={loadMore}>
                 Load more ({items.length} of {total})
               </AdminButton>
@@ -156,41 +157,41 @@ export default function MembersPage() {
 
 function MemberRow({ member, showOwner }: { member: Member; showOwner: boolean }) {
   return (
-    <tr className="transition-colors hover:bg-black/[0.015]">
-      <td className="py-6 pl-8 pr-6">
+    <tr className="transition-colors hover:bg-cream/70">
+      <td className="py-4 pl-6 pr-6">
         <div className="flex items-center gap-4">
           <MemberInitial name={member.displayName} />
           <div className="min-w-0">
-            <p className="truncate text-[17px] font-black uppercase tracking-tight text-ink">
+            <p className="truncate text-[15px] font-medium tracking-tight text-ink">
               {member.displayName}
             </p>
             {member.username && (
-              <p className="truncate text-[14px] font-bold text-subtle">@{member.username}</p>
+              <p className="truncate text-[13px] text-muted">@{member.username}</p>
             )}
-            <p className="truncate text-[14px] text-subtle">{member.loginEmail}</p>
+            <p className="truncate text-[13px] text-subtle">{member.loginEmail}</p>
           </div>
         </div>
       </td>
-      <td className="px-6 py-6">
+      <td className="px-6 py-4">
         <RoleBadge role={member.role} />
       </td>
       {showOwner && (
-        <td className="px-6 py-6">
+        <td className="px-6 py-4">
           {member.role === 'user' ? <AddedByBadge addedBy={member.addedBy} /> : <span className="text-subtle">—</span>}
         </td>
       )}
-      <td className="px-6 py-6 font-mono text-[17px] font-bold text-ink">
+      <td className="px-6 py-4 tabular text-[15px] font-medium text-ink">
         {formatCurrency(member.balance)}
       </td>
-      <td className="px-6 py-6 font-mono text-[15px] font-semibold tracking-[0.12em] text-subtle">
+      <td className="px-6 py-4 font-mono text-[13px] text-muted">
         {member.inviteCode}
       </td>
-      <td className="py-6 pl-6 pr-8 text-right">
+      <td className="py-4 pl-6 pr-6 text-right">
         <Link
           href={`/admin/members/${member.id}`}
-          className="inline-flex items-center gap-2.5 rounded-2xl bg-[#1c1c1c] px-5 py-3.5 text-[12px] font-extrabold uppercase tracking-[0.14em] text-gold transition-colors hover:bg-black"
+          className="inline-flex h-9 items-center gap-2 rounded-xl border border-line bg-white px-3.5 text-[13px] font-medium text-ink transition-colors hover:border-ink/25 hover:bg-cream"
         >
-          <EditIcon className="h-5 w-5" />
+          <EditIcon className="h-4 w-4" />
           Manage
         </Link>
       </td>

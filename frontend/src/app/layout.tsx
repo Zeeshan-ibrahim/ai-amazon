@@ -9,7 +9,7 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: 'Quick On Amazon',
+  title: 'MallHub',
   description:
     'Amazon arbitrage trading dashboard — orders, partnership plans and ledger.',
 };

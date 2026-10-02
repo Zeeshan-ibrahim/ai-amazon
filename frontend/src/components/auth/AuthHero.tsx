@@ -70,13 +70,13 @@ export function AuthHero() {
       </svg>
 
       <div className="flex flex-col items-center px-6 pb-10 pt-10 lg:hidden">
-        <Logo stacked={false} markClassName="text-white h-8 w-12" className="flex-col gap-2 text-white" />
+        <Logo markClassName="text-white h-8 w-12" className="flex-col gap-2 text-white" />
       </div>
 
       <div className="hidden lg:block lg:flex-1" />
 
       <div className="hidden px-10 pb-10 text-[13px] leading-relaxed text-white/45 lg:block">
-        <p>© 2026 Quick on Amazon</p>
+        <p>© 2026 MallHub</p>
         <p>All rights reserved.</p>
       </div>
     </div>
