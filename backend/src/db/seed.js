@@ -150,12 +150,12 @@ const { rows: subPlans } = await query('SELECT 1 FROM plans WHERE created_by = $
 if (!subPlans.length) {
   await query(
     `INSERT INTO plans (name, tag, price, description, created_by)
-     VALUES ('Starter Package', 'Starter', 250, 'Only shown to Sara''s members', $1)`,
+     VALUES ('Starter Package', 'Starter', 250, 'Entry-level package with a low starting commitment', $1)`,
     [subAdmin.id]
   );
   await query(
     `INSERT INTO products (title, price, profit_percentage, created_by)
-     VALUES ('Sara''s Pick: Bose QuietComfort Earbuds II', 279, 3, $1)`,
+     VALUES ('Bose QuietComfort Earbuds II', 279, 3, $1)`,
     [subAdmin.id]
   );
   console.log('created a plan and a product for subadmin@demo.test');
