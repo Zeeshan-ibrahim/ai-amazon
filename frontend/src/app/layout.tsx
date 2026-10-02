@@ -11,7 +11,7 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   title: 'MallHub',
   description:
-    'Amazon arbitrage trading dashboard — orders, partnership plans and ledger.',
+    'Product trading workflow dashboard — orders, plans and ledger. Academic demo with simulated data.',
 };
 
 export const viewport: Viewport = {
